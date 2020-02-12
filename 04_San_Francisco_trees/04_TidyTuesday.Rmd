@@ -1,0 +1,185 @@
+---
+title: "04_TidyTuesday"
+author: "Maria Sevillano"
+date: "02/02/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: San Francisco Trees
+
+This R Markdown documents exploration of [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-28).  
+
+The objective for this week is to:  
+
+* visualize how the number and species of trees has changed over the years since 1955.  
+
+These are good resources to learn about maps:  
+1. <https://dadascience.design/post/r-gis-like-it-s-2019-pragmatic-workflows-pt-1/>
+2. <https://bhaskarvk.github.io/user2017.geodataviz/notebooks/02-Static-Maps.nb.html#animations>
+
+Here's a [link](https://medium.com/@SportSciData/https-medium-com-collinsneil306-how-to-create-interactive-reports-with-r-markdown-part-i-4fa9df46cd9) for data tables.
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(gganimate)
+library(sf)
+library("rnaturalearth")
+library("rnaturalearthdata")
+library(magick)
+#library(DT)
+library(knitr)
+library(kableExtra)
+
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+sf_trees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+
+```
+
+For the species column;
+'Tree(s) ::' label doesn't provide additional information about the tree type, will filter out.
+'::' label doesn't provide additional information about the tree type, will filter out
+
+The '::' delimiter separates the scientific name and common name of tree. 
+Date Planted (NA if before 1955), will only keep those planted after 1955.
+
+
+## Check Data Structure
+```{r data_structure, warning=FALSE, message=FALSE}
+str(sf_trees)
+summary(sf_trees)
+
+levels(as.factor(sf_trees$legal_status))
+levels(as.factor(sf_trees$species))
+levels(as.factor(sf_trees$caretaker))
+
+```
+
+## Wrangle data
+```{r data_wrangling, warning=FALSE, message=FALSE}
+
+sf_trees_tidy <- sf_trees %>%
+  filter(species != "::") %>%
+  filter(species != "Tree(s) ::") %>%
+  filter(!is.na(date)) #These filtering steps remove ~ 70% of the data, but we still have 58090 observations.
+
+
+length(levels(as.factor(sf_trees_tidy$species))) 
+
+sf_trees_tidy <- sf_trees_tidy %>%
+  separate(species, into = c("scientific", "common"), sep = "::") %>%
+  separate(scientific, into= c("genus", "species"), sep= " ") %>%
+  mutate(year_planted= year(date)) %>%
+  mutate(keeper= ifelse(caretaker=="Private", "Private", "Other"))
+
+sf_trees_tidy %>% group_by(keeper) %>% summarise(counts= n())
+
+selected_genus<- sf_trees_tidy %>% 
+  group_by(genus, species) %>%
+  summarise(counts= n()) %>%
+  ungroup() %>%
+  spread(key=genus, value=counts) %>%
+  select(everything()) %>%  # replace to your needs
+  summarise_all(funs(sum(!is.na(.)))) %>%
+  select(-species) %>%
+  gather(key = "genus", value = "richness") %>%
+  arrange(desc(richness)) %>%
+  as.data.frame()
+
+#DT::datatable(selected_genus, class = 'cell-border stripe', rownames = F, filter = 'top', options = list(pageLength = 10), width = '55%')
+
+kable(selected_genus) %>%
+  kable_styling() %>%
+  scroll_box(width = "500px", height = "200px")
+
+#to try out plot
+random_subset<- sample_n(sf_trees_tidy, 200)
+
+selected_sf_trees<- sf_trees_tidy %>%
+  filter(genus== "Melaleuca") %>%
+  mutate(common=as.factor(common))
+ 
+```
+
+## Plot
+A big reccommendation is to keep track of package version when troubleshooting or following tutorials.  
+
+[This](http://www.bernhardlearns.com/2018/11/animating-r-plot-with-gganimate.html) tutorial was useful in deciphering how to add points in every transition state, without removing ponts past transition states.
+
+Below is an annimation of all the records from 1955 that have a tree species designation. 
+```{r plots, warning=FALSE, message=FALSE}
+
+california_map <- ne_states(country = "united states of america", returnclass = "sf") %>%
+  filter(postal == "CA")
+
+class(california_map)
+
+#http://www.bernhardlearns.com/2018/11/animating-r-plot-with-gganimate.html
+p<- ggplot() +
+  geom_sf(data = california_map, fill= "antiquewhite") +
+  coord_sf(xlim = c(-122.3, -122.6), ylim = c(37.7, 37.84)) +
+  geom_point(data= sf_trees_tidy, aes(longitude, latitude, group=year_planted, shape= keeper), color= "#006700", alpha=0.5) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(), 
+        panel.background = element_rect(fill = "lightblue"),
+        panel.grid.major = element_line(colour = "lightblue"), 
+        panel.grid.minor = element_line(colour = "lightblue")) +
+  transition_states(year_planted, 3,1) +
+  shadow_mark(past=TRUE) +
+  ggtitle('Now showing year {closest_state}')
+
+p
+```
+
+An approach to reduce dimensions of the data is to subset genera of interest.
+
+```{r plots2, warning=FALSE, message=FALSE}
+p2<- ggplot() +
+  geom_sf(data = california_map, fill= "antiquewhite") +
+  coord_sf(xlim = c(-122.3, -122.6), ylim = c(37.7, 37.84)) +
+  geom_point(data= selected_sf_trees, aes(longitude, latitude, group=year_planted, color= common), shape= 18, alpha=0.5) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(), 
+        panel.background = element_rect(fill = "lightblue"),
+        panel.grid.major = element_line(colour = "lightblue"), 
+        panel.grid.minor = element_line(colour = "lightblue")) +
+  transition_states(year_planted, transition_length = 3, state_length =1) +
+  shadow_mark(past=TRUE) +
+  ggtitle('Now showing year {closest_state}') +
+  theme(legend.position="bottom")  
+
+p2
+```
+
+Randomly zoomed to an area
+```{r plot3, warning=FALSE, message=FALSE}
+
+p3<- ggplot() +
+  geom_sf(data = california_map, fill= "antiquewhite") +
+  coord_sf(xlim = c(-122.3, -122.6), ylim = c(37.7, 37.84)) +
+  geom_point(data= selected_sf_trees, aes(longitude, latitude, group=year_planted, color= common), shape= 18, alpha=0.5) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(), 
+        panel.background = element_rect(fill = "lightblue"),
+        panel.grid.major = element_line(colour = "lightblue"), 
+        panel.grid.minor = element_line(colour = "lightblue")) +
+  transition_states(year_planted, 3,1) +
+  shadow_mark(past=TRUE) +
+  ggtitle('Now showing year {closest_state}') +
+  theme(legend.position="bottom") + 
+  view_step(fixed_x = c(-122.45, -122.4), fixed_y = c(37.78, 37.8), pause_length = 1, step_length = 2, nsteps = 3)
+p3
+
+```
+
+
