@@ -1,7 +1,7 @@
 TidyTuesday
 ================
 
-The [Pinto lab](https://www.pintolab.com/), under [Chris Anderson](https://github.com/chrisLanderson) lead, meet every Tuesday to discuss visualization and analyses of [TidyTuesday](https://github.com/rfordatascience/tidytuesday) data.
+Some [Pinto lab](https://www.pintolab.com/) members, under [Chris Anderson](https://github.com/chrisLanderson) lead, meet every Tuesday to discuss visualization and analyses of [TidyTuesday](https://github.com/rfordatascience/tidytuesday) data.
 
 As a group exercise the objectives are:
 
@@ -15,6 +15,7 @@ As a group exercise the objectives are:
 In this repo I will be documenting *my* contribution.
 
 Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week.
+
 Please exercise caution and your own judgement if using any of the info herein.
 
 So far I have looked at data about:
