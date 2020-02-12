@@ -1,0 +1,331 @@
+---
+title: "Tidy_Tuesday_2020_01_14"
+author: "Maria Sevillano"
+date: "14/01/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Australian Fires
+
+This R Markdown documents exploration of [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-01-07)
+
+The objective for this week is to visualize recent bushfires spreading rapidly in Australia. For this purpose I have decided to use the three (cleaned up) datasets:
+
+1. rainfall
+2. temperature
+3. new southwales rural fire service data
+
+
+Things to note: It has been the hottest and driest year in Australia.
+
+## Load libraries
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(sf)
+library(mapview)
+library(tidyverse)
+library(here)
+library(ggthemes)
+
+library(ggrepel)
+library(googleway)
+library(ggspatial)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(lwgeom)
+library(rgeos)
+
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+rainfall <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/rainfall.csv')
+temperature <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-07/temperature.csv')
+aus_fires <- sf::st_read("http://www.rfs.nsw.gov.au/feeds/majorIncidents.json")
+```
+
+## Check Data Structure
+```{r data_structure, warning=FALSE, message=FALSE}
+str(rainfall)
+summary(rainfall)
+str(temperature)
+summary(temperature)
+str(aus_fires)
+summary(aus_fires)
+
+ 
+levels(as.factor(temperature$city_name))
+levels(as.factor(rainfall$city_name))
+#The names of cities common to data sets differs.
+
+```
+
+## Temperature Data
+I'll be looking at time series data, class of variabe 'date' is DATE, the package LUBRIDATE might come in handy.
+
+This data set contains daily data from January 1910 to May 2019. 
+
+Will have to do some wrangling to make plots easier on the eyes (e.g. filter by years)
+
+
+```{r temperature_data, warning=FALSE, message=FALSE}
+library(lubridate)
+
+sub_temp<- temperature %>%
+  filter(date >= as.Date("2018-01-01")) 
+```
+
+
+## Temperature Plots
+For plotting I used the package GGTHEMES, which allows to reproduce the style of several magazines, journals, web pages, etc. 
+
+```{r plots_temp1, echo=FALSE, warning=FALSE, message=FALSE}
+ggplot(sub_temp) +
+  ggthemes::theme_tufte() + 
+  geom_line(aes(date, temperature, color=city_name, linetype=temp_type)) +
+  ylab("Temperature (C)") +
+  xlab("Date (yy-mm)") +
+  scale_color_discrete(name= "City") +
+  scale_linetype_discrete(name= "Temperature Type") +
+  ggtitle("Time series data of temperature in different cities of Australia")
+  
+
+```
+
+With the previous plot we can observe some trends, such as higher temperatures in summer months (i.e. Jan, Feb, March), however it is still too much data. I'll try with monthly means next.
+
+```{r tempera_data_wrangling, warning=FALSE, message=FALSE}
+mean_month<- sub_temp %>%
+  mutate(month= month(date)) %>%
+  mutate(year= year(date)) %>%
+  group_by(city_name, temp_type, month, year) %>%
+  summarise(mean_month= mean(temperature)) %>%
+  mutate(date= sprintf("%d-%02d", year, month))  %>%
+  mutate(date= paste(date, "01", sep = "-")) %>%
+  mutate(date= as_date(date))
+
+```
+
+```{r temperature_plot2, warning=FALSE, message=FALSE}
+ggplot(mean_month) +
+  ggthemes::theme_tufte() + 
+  geom_line(aes(date, mean_month, color=city_name, linetype=temp_type)) +
+  ylab("Temperature (C)") +
+  xlab("Date (yy-mm)") +
+  scale_color_discrete(name= "City") +
+  scale_linetype_discrete(name= "Temperature Type") +
+  ggtitle("Monthly average of temperature in different cities of Australia")
+
+```
+
+
+Let's look at how the max tempertures have changed over the years in the summer months: December - February.
+
+```{r temperature_data_wrangling_2, warning=FALSE, message=FALSE}
+yearly_temp<- temperature %>%
+  filter(temp_type=="max") %>%
+  mutate(month= month(date)) %>%
+  mutate(year= year(date)) %>%
+  filter(month %in% c(12, 01, 02)) %>%
+  group_by(city_name, month, year) %>%
+  summarise(mean_month= mean(temperature)) %>%
+  mutate(date= sprintf("%d-%02d", year, month))  %>%
+  mutate(date= paste(date, "01", sep = "-")) %>% #trick to get it in date format: made all days the 1st
+  mutate(date= as_date(date))
+```
+
+```{r temperature_plot_3, warning=FALSE, message=FALSE}
+ggplot(yearly_temp) +
+  ggthemes::theme_tufte() + 
+  geom_area(aes(date, mean_month, fill= city_name), stat = "identity", alpha=0.8) +
+  facet_wrap(~city_name) +
+  ylab("Temperature (C)") +
+  xlab("Date (yy)") +
+  scale_fill_discrete(name= "City") +
+  ggtitle("Monthly average of temperature in different cities of Australia (Dec-Feb)") 
+```
+
+
+```{r temperatur_data_wrangling_3, warning=FALSE, message=FALSE}
+yearly_temp2<- temperature %>%
+  filter(temp_type=="max") %>%
+  mutate(month= month(date)) %>%
+  mutate(year= year(date)) %>%
+  filter(month %in% c(12, 01, 02)) %>%
+  group_by(city_name, year) %>%
+  summarise(mean_month= mean(temperature))
+```
+
+```{r temperature_plot_4, warning=FALSE, message=FALSE}
+ggplot(yearly_temp2) +
+  ggthemes::theme_tufte() + 
+  geom_bar(aes(year, mean_month, fill= city_name), stat = "identity", position = "dodge", alpha=0.8) +
+  facet_wrap(~city_name) +
+  ylab("Temperature (C)") +
+  xlab("Date (yy)") +
+  scale_fill_discrete(name= "City") +
+  ggtitle("Monthly average of temperature in different cities of Australia (Dec-Feb)")
+```
+ 
+
+## Rainfall
+
+Will only use data that have certified quality (i.e. completed the routine quality control process <http://www.bom.gov.au/climate/cdo/about/about-rain-data.shtml>). Will focus on data from the 3 summer months (Dec - Feb). Further, will only take a look at data collected over a single day. Will only plot data from the last 10 years.
+
+```{r rainfall_data_wrangling}
+
+#Turn city names to caps just as in temperature data and keep only quality checked data. Also for consistency with dates will use the same format as previously.
+
+rainfall_e<- rainfall %>%
+  mutate(city_name=toupper(city_name)) %>%
+  filter(quality=="Y") %>%
+  mutate(date= as_date(paste(year, month, day, sep="-"))) %>%
+  filter(month %in% c("12", "01", "02")) %>%
+  filter(period==1) %>%
+  filter(date>= today() - years(10))
+```
+
+
+
+```{r rainfall_plot}
+
+ggplot(rainfall_e) +
+  theme_tufte() +
+  geom_line(aes(date, rainfall, color=city_name, group=city_name)) +
+  facet_grid(city_name~month) +
+  ylab("Rainfall (mm)") +
+  xlab("Date (yy)") +
+  scale_color_discrete(name= "City")  
+
+```
+
+Let's include the data that is not certfied
+
+```{r rainfall_data_wrangling_2}
+rainfall_e2<- rainfall %>%
+  mutate(city_name=toupper(city_name)) %>%
+  mutate(date= as_date(paste(year, month, day, sep="-"))) %>%
+  filter(month %in% c("12", "01", "02")) %>%
+  filter(period==1) %>%
+  filter(date>= today() - years(10))
+
+```
+
+```{r rainfall_plot2}
+
+ggplot(rainfall_e2) +
+  theme_tufte() +
+  geom_line(aes(date, rainfall, color=city_name, group=city_name)) +
+  facet_grid(city_name~month) +
+  ylab("Rainfall (mm)") +
+  xlab("Date (yy)") +
+  scale_color_discrete(name= "City")  
+
+```
+## Fires
+
+To represent spatial data (e.g., coordinates, maps), we will use the SF package. Pertinent information regarding simple features can be found in the vignette <https://r-spatial.github.io/sf/articles/sf1.html>
+
+To get additional spatial data the RNATURALEARTH package will be used. Keep in mind that it has some dependencies that need to be downloaded when using a function for the first time. I had issues with 'install.packages("rnaturalearthhires", repos = "http://packages.ropensci.org", type = "source")'. Just restarting R should do the trick. 
+
+
+```{r fire_data_wrangling, warning=FALSE, message=FALSE}
+
+world <- rnaturalearth::ne_countries(scale = "medium", returnclass = "sf") #sf: simple feature standard
+class(world)
+
+world %>% filter(name_sort=="Australia") %>% select(geometry) # to get a bounding box for the country
+
+world_points <- cbind(world, st_coordinates(st_centroid(world$geometry)))
+```
+
+When plotting spatial feature data (sf), I used the SF package in combination with GGPLOT2. Additional info can be found here: <https://www.r-spatial.org/r/2018/10/25/ggplot2-sf.html>
+
+```{r fire_plots}
+#WORLD
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+        panel.background = element_rect(fill = "aliceblue"))
+
+#AUSTRALIA RECT
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  xlab("Longitude") + ylab("Latitude") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+        panel.background = element_rect(fill = "aliceblue")) + 
+  geom_rect(aes(xmin = 110, xmax= 158.9589, ymin= -54.74922, ymax=-5), color= "black", fill=NA) +
+  ggtitle("Australia")
+
+#AUSTRALIA
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  geom_text(data= world_points,aes(x=X, y=Y, label=name),
+            color = "darkblue", fontface = "bold", check_overlap = FALSE) +
+  xlab("Longitude") + ylab("Latitude") +
+  annotation_scale(location = "bl", width_hint = 0.5)  +
+  annotation_north_arrow(location = "bl", which_north = "true", 
+                         pad_x = unit(0.75, "in"), pad_y = unit(0.5, "in"),
+                         style = north_arrow_fancy_orienteering) +
+  coord_sf(xlim = c(110, 158.9589), ylim = c(-54.74922, -5), expand = FALSE) +
+  ggtitle("Australia") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+        panel.background = element_rect(fill = "aliceblue")) 
+
+#AUSTRALIA FIRE DATA
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  geom_text(data= world_points,aes(x=X, y=Y, label=name),
+            color = "darkblue", fontface = "bold", check_overlap = FALSE) +
+  xlab("Longitude") + ylab("Latitude") +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  geom_sf(data=aus_fires) +
+  coord_sf(xlim = c(110, 158.9589), ylim = c(-54.74922, -5), expand = FALSE) +
+  ggtitle("Raw New Southwales RFS Data") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), panel.background = element_rect(fill = "aliceblue")) 
+
+#This plot shows the available data for fires, they are happening in the south east area, therefore, we will zoom into that part for further visualization.
+
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  geom_text(data= world_points,aes(x=X, y=Y, label=name),
+            color = "darkblue", fontface = "bold", check_overlap = FALSE) +
+  xlab("Longitude") + ylab("Latitude") +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  geom_sf(data=aus_fires) +
+  coord_sf(xlim = c(110, 158.9589), ylim = c(-54.74922, -5), expand = FALSE) +
+  ggtitle("Raw New Southwales RFS Data") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+        panel.background = element_rect(fill = "aliceblue")) +
+  geom_rect(aes(xmin = 140, xmax= 158, ymin= -40, ymax=-20), color= "black", fill=NA)
+```
+
+To generate a data frame of aus_fires free of points within its geometry collection, I followed <https://gist.github.com/deanmarchiori/cb64f105eb0f6204eaa88323eaa29fdb>
+
+```{r fire_data_wrangling_2, warning=FALSE, message=FALSE}
+fire_poly <- aus_fires %>% 
+  st_buffer(dist = 0) %>% 
+  st_union(by_feature = TRUE)
+```
+
+
+```{r fire_plot_2}
+ggplot(data=world) +
+  geom_sf(fill= "antiquewhite") +
+  xlab("Longitude") + ylab("Latitude") +
+  annotation_scale(location = "bl", width_hint = 0.5) +
+  geom_sf(data=fire_poly, fill="red") +
+  coord_sf(xlim = c(140, 158), ylim = c(-40, -20), expand = FALSE) +
+  ggtitle("Zoom to affected areas") +
+  theme(panel.grid.major = element_line(color = gray(.5), linetype = "dashed", size = 0.5), 
+        panel.background = element_rect(fill = "aliceblue"))
+```
+
+
+
+
