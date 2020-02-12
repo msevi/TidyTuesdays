@@ -14,6 +14,9 @@ As a group exercise the objectives are:
 
 In this repo I will be documenting *my* contribution.
 
+Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week.
+Please exercise caution and your own judgement if using any of the info herein.
+
 So far I have looked at data about:
 
 1.  Australian fires

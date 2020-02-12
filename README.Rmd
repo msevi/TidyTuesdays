@@ -16,6 +16,9 @@ As a group exercise the objectives are:
 
 In this repo I will be documenting *my* contribution.
 
+Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week.  
+Please exercise caution and your own judgement if using any of the info herein.
+
 So far I have looked at data about:
 
 1. Australian fires  
@@ -25,7 +28,6 @@ So far I have looked at data about:
 5. NFL attendance  
 
 5 out of 6, what a streak!
-
 
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
