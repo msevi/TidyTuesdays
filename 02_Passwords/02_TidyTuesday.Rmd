@@ -1,0 +1,283 @@
+---
+title: "02_Tidy_Tuesday"
+author: "Maria Sevillano"
+date: "15/01/2020"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Passwords
+
+This R Markdown documents exploration of Tidy Tuesday data found in <https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-14>. 
+
+The objective for this week is to visualize popular password and how easy it is to crack down bad passwords.
+
+Since the readme file shows a xkcd comic <https://xkcd.com/936/>, I wanted to incorporate this look into the visualization.  
+
+Here are some resources I found helpful: 
+
+<https://stackoverflow.com/questions/12675147/how-can-we-make-xkcd-style-graphs>
+
+<https://epijim.uk/code-snippets/xkcd/>
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(xkcd)
+library(RColorBrewer)
+library(cowplot)
+
+
+```
+
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+passwords <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-14/passwords.csv')
+
+```
+
+## Ispect data
+```{r inspect_data, warning=FALSE, message=FALSE}
+str(passwords)
+summary(passwords)
+levels(as.factor(passwords$category))
+levels(as.factor(passwords$time_unit))
+```
+
+## Wrangle Data
+```{r wrangle_data, warning=FALSE, message=FALSE}
+font_import(pattern = "[X/x]kcd", prompt=FALSE)
+fonttable()
+loadfonts()
+
+colors_category<- data.frame(category=levels(as.factor(passwords$category)), color= RColorBrewer::brewer.pal(length(levels(as.factor(passwords$category))), name = "Spectral")) %>%
+  mutate(color=as.character(color)) %>%
+  column_to_rownames("category")
+  
+
+sec_to_day<- function(x){x/(60*60*24)}
+min_to_day<- function(x) {x/(60*24)}
+hour_to_day<- function(x) {x/24}
+week_to_day<- function(x) {7*x}
+month_to_day<- function(x) {30.42*x}
+year_day<- function(x) {365*x}
+
+
+for (i in levels(as.factor(passwords$category))){
+  #Data for left side
+  passwords1<- passwords %>%
+    filter(category== i) %>%
+    group_by(category) %>%
+    top_n(-20, rank) %>%
+    mutate(pass1= as.numeric(as.factor(password))) %>%
+    mutate(xmin= pass1 - 0.1) %>%
+    mutate(xmax= pass1 + 0.1) %>%
+    mutate(ymin = 0) %>%
+    mutate(ymax = offline_crack_sec)
+  
+  #Give some space to fit in text
+  xrange1 <- range(min(passwords1$xmin), max(passwords1$xmax))
+  yrange1 <- range(min(passwords1$ymin), max(passwords1$ymax))
+  mapping1 <- aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax, fill=category)
+  
+  #Data for right side
+  passwords2<- passwords %>%
+    filter(category== i) %>%
+    group_by(category) %>%
+    top_n(-20, rank) %>%
+    mutate(pass2= as.numeric(as.factor(password))) %>%
+    mutate(value2= ifelse(time_unit=="hours", hour_to_day(value), 
+                         ifelse(time_unit=="minutes", min_to_day(value),
+                                  ifelse(time_unit=="months", month_to_day(value),
+                                         ifelse(time_unit=="seconds", sec_to_day(value),
+                                                ifelse(time_unit=="weeks", week_to_day(value),
+                                                       ifelse(time_unit=="years", year_day(value),
+                                                              ifelse(time_unit=="days", value, value)))))))) %>%
+    mutate(xmin= pass2 - 0.1) %>%
+    mutate(xmax= pass2 + 0.1) %>%
+    mutate(ymin = 0) %>%
+    mutate(ymax = value2)
+  
+  #Give some space to fit in text
+  xrange2 <- range(min(passwords2$xmin), max(passwords2$xmax))
+  yrange2 <- range(min(passwords2$ymin), max(passwords2$ymax))
+  mapping2 <- aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax, fill=category)
+  
+  
+  #Plots
+  p1<- ggplot() + 
+    xkcdrect(mapping1, passwords1) +
+    xkcdaxis(xrange1,yrange1) +
+    scale_fill_manual(values = colors_category[i,"color"]) +
+    scale_y_reverse() +
+    coord_flip()  +
+    ggtitle(i, subtitle = "Crack offline") +
+    theme(axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          axis.ticks.y = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
+    ylab("Time, in sec")
+  
+  
+  pmid<- ggplot(passwords1, aes(x=0,y=pass1)) +
+    geom_text(aes(label=password, size= font_size, family="xkcd"), color= colors_category[i,"color"]) +
+    xkcdaxis(c(0,0),xrange1) +
+    ggtitle("Popularity") +
+    theme_xkcd()+
+    theme(axis.title=element_blank(),
+          panel.grid=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.background=element_blank(),
+          axis.text.x=element_text(color=NA),
+          axis.ticks.x=element_line(color=NA),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5)) 
+  
+  p2<- ggplot() + 
+    xkcdrect(mapping2, passwords2) +
+    xkcdaxis(xrange2,yrange2) +
+    scale_fill_manual(values = colors_category[i,"color"]) +
+    coord_flip()  +
+    ggtitle(i, subtitle = "Crack manually") +
+    theme(axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          axis.ticks.y = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
+    ylab("Time, in days")
+  
+  plot<- plot_grid(p1,pmid, p2,align = "h", nrow = 1, axis = "tblr", rel_widths = c(1,0.5,1))
+  print(plot)
+}
+
+
+```
+
+# Alternative #1
+You cant't really see a difference in bar sizes when using year as time unit. 
+```{r alternative1, warning=FALSE, message=FALSE}
+
+for (i in levels(as.factor(passwords$category))){
+  #Data for left side
+  passwords1<- passwords %>%
+    filter(category== i) %>%
+    group_by(category) %>%
+    top_n(-20, rank) %>%
+    mutate(pass1= as.numeric(as.factor(password))) %>%
+    mutate(xmin= pass1 - 0.1) %>%
+    mutate(xmax= pass1 + 0.1) %>%
+    mutate(ymin = 0) %>%
+    mutate(ymax = offline_crack_sec)
+  
+  #Give some space to fit in text
+  xrange1 <- range(min(passwords1$xmin), max(passwords1$xmax))
+  yrange1 <- range(min(passwords1$ymin), max(passwords1$ymax))
+  mapping1 <- aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax, fill=category)
+  
+  #Data for right side
+  passwords2<- passwords %>%
+    filter(category== i) %>%
+    group_by(category) %>%
+    top_n(-20, rank) %>%
+    mutate(pass2= as.numeric(as.factor(password))) %>%
+    mutate(xmin= pass2 - 0.1) %>%
+    mutate(xmax= pass2 + 0.1) %>%
+    mutate(ymin = 0) %>%
+    mutate(ymax = value)
+  
+  #Give some space to fit in text
+  xrange2 <- range(min(passwords2$xmin), max(passwords2$xmax))
+  yrange2 <- range(min(passwords2$ymin), max(passwords2$ymax))
+  mapping2 <- aes(xmin=xmin,ymin=ymin,xmax=xmax,ymax=ymax, fill=category)
+  
+  
+  #Plots
+  p1<- ggplot() + 
+    xkcdrect(mapping1, passwords1) +
+    xkcdaxis(xrange1,yrange1)  +
+    scale_y_reverse() +
+    scale_fill_manual(values = colors_category[i,"color"]) +
+    coord_flip()  +
+    ggtitle(i, subtitle = "Crack offline") +
+    theme(axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          axis.ticks.y = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
+    ylab("Time, sec")
+  
+  
+  pmid<- ggplot(passwords1, aes(x=0,y=pass1)) +
+    geom_text(aes(label=password, size= font_size, family="xkcd"), colour= colors_category[i,"color"]) +
+    xkcdaxis(c(0,0),xrange1, colour=colors_category[i,"color"]) +
+    ggtitle("Popularity") +
+    theme_xkcd()+
+    theme(axis.title=element_blank(),
+          panel.grid=element_blank(),
+          axis.text.y=element_blank(),
+          axis.ticks.y=element_blank(),
+          panel.background=element_blank(),
+          axis.text.x=element_text(color=NA),
+          axis.ticks.x=element_line(color=NA),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5)) 
+  
+  p2<- ggplot() + 
+    xkcdrect(mapping2, passwords2) +
+    xkcdaxis(xrange2,yrange2) +
+    geom_text(data = passwords2, aes(x= pass2, y= value + 0.5, label=time_unit, family="xkcd") , color= colors_category[i,"color"], hjust=1, fill= "white") +
+    scale_fill_manual(values = colors_category[i,"color"]) +
+    coord_flip()  +
+    ggtitle(i, subtitle = "Crack manually") +
+    theme(axis.title.y = element_blank(), 
+          axis.text.y = element_blank(), 
+          axis.ticks.y = element_blank(),
+          legend.position = "none",
+          plot.title = element_text(hjust = 0.5),
+          plot.subtitle = element_text(hjust = 0.5)) +
+    ylab("Time")
+  
+  plot<- plot_grid(p1,pmid, p2,align = "h", nrow = 1, axis = "tblr", rel_widths = c(1,0.5,1))
+  print(plot)
+}
+```
+
+# Alternative #2
+```{r alternative2, warning=FALSE, message=FALSE}
+password4<- passwords %>%
+  filter(category== "cool-macho") %>%
+  group_by(category) %>%
+  top_n(-20, rank) %>%
+  ungroup() %>%
+  mutate(offline_crack_sec= -offline_crack_sec) %>%
+  select(password, value, offline_crack_sec) %>%
+  gather(key="crack", value= "time", -password)
+
+
+password5<- passwords %>%
+  select(password, rank)
+
+password4 <- password4 %>%
+  left_join(password5)
+
+breaks_values <- pretty(password4$time)
+
+ggplot(password4) +
+  geom_bar(aes(reorder(password, desc(rank)), time, fill=crack), stat = "identity") +
+  scale_y_continuous(breaks = breaks_values,
+                     labels = abs(breaks_values)) +
+  coord_flip() +
+  xlab("Password") +
+  theme_xkcd()
+
+```
+
