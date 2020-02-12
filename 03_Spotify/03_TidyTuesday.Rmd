@@ -1,0 +1,179 @@
+---
+title: "03_TidyTuesday"
+author: "Maria Sevillano"
+date: "21/01/2020"
+output: github_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Spotify
+
+This R Markdown documents exploration of [Tidy Tuesday data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-01-21).  
+
+The objective for this week is to visualize data downloaded with the **spotifyr** package. I'll be using [Spotify's aesthetics](https://brandpalettes.com/spotify-color-codes/) in the visualization.  
+
+The following code will aim to explore the following:  
+* Who are the top 50 artist?  
+* Are the top50 artist consistently categorized in the same genre?  
+* How timeless are some popular artists?  
+* What is the distribution of song features belonging to these top50 artists? (e.g., How positive is the music they make according to [valence](https://www.kaylinpavlik.com/classifying-songs-genres/)?)
+
+
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(extrafont)
+library(patchwork)
+library(cowplot)
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+spotify_songs <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-21/spotify_songs.csv')
+
+
+```
+
+## Check Data Structure
+```{r data_structure, warning=FALSE, message=FALSE}
+str(spotify_songs)
+summary(spotify_songs)
+
+spotify_songs %>%
+  select(playlist_genre) %>%
+  distinct #how many genres
+
+spotify_songs %>%
+  select(track_artist) %>%
+  distinct #how many artists
+
+```
+
+## Data Wrangling
+```{r data_swrangling, warning=FALSE, message=FALSE}
+
+#get a frequency table for top 50
+popular_artists<- spotify_songs %>% 
+  group_by(track_artist) %>%
+  summarize(count= n()) %>%
+  arrange(desc(count)) %>%
+  ungroup() %>%
+  top_n(50, count) %>%
+  mutate(track_artist = as.factor(track_artist)) %>%
+  mutate(track_artist = fct_reorder(track_artist, count))
+
+
+#select specific colums for distributions of variables for these popular artists
+distribution_variables<-  spotify_songs %>%
+  filter(track_artist %in% popular_artists$track_artist) %>%
+  select(danceability, energy, key, loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo, duration_ms) %>%
+  gather()
+
+
+#popular artis genre
+popular_artists_genre <-spotify_songs %>%
+  filter(track_artist %in% as.character(popular_artists$track_artist)) %>% 
+  group_by(track_artist, playlist_genre) %>%
+  summarize(count= n()) %>%
+  ungroup() %>%
+  mutate(track_artist= as.factor(track_artist)) %>%
+  mutate(track_artist= fct_relevel(track_artist, levels(popular_artists$track_artist)))
+
+
+#popular artis song release
+popular_artists_year <-spotify_songs %>%
+  filter(track_artist %in% as.character(popular_artists$track_artist)) %>% 
+  separate(track_album_release_date, into = c("year", "month", "day")) %>%
+  select(-month, -day) %>%
+  select(year, track_artist) %>%
+  mutate(year =as.numeric(year)) %>%
+  mutate(track_artist = as.factor(track_artist)) %>%
+  mutate(track_artist = fct_relevel(track_artist, levels(popular_artists$track_artist))) %>%
+  mutate(fill_cat= ifelse((as.numeric(track_artist)%%2)==0, "EVEN", "ODD")) %>%
+  mutate(ymin= as.numeric(as.factor(track_artist)))
+
+```
+
+
+##Plots
+```{r plots, warning=FALSE, message=FALSE, fig.width=10,fig.height=11}
+
+#font_import() #only done once
+#loadfonts() 
+
+
+p_artist_rank<- ggplot(popular_artists) +  geom_bar(aes(track_artist, count), stat = "identity", fill="#1DB954") +
+  geom_text(aes(track_artist, count, label= count), family="Proxima Nova Rg", color = "#FFFFFF", hjust = 0, nudge_x = 0.1) +
+  coord_flip() +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.background = element_rect(fill = "#000000"),
+        panel.background = element_rect(fill = "#000000")) +
+  theme(axis.text = element_text(family="Proxima Nova Rg", color = "#FFFFFF", size= 12)) +
+  theme(axis.text.x = element_blank()) +
+  scale_y_discrete(expand = c(0, 20)) #bring axis labels closer to bar
+
+p_genres<- ggplot() +
+  geom_tile(data=popular_artists_genre, aes(playlist_genre, track_artist, fill= count)) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.background = element_rect(fill = "#000000"),
+        panel.background = element_rect(fill = "#000000"),
+        axis.text = element_text(family="Proxima Nova Rg", color = "#FFFFFF", size= 12),
+        axis.text.x = element_text(angle=90), 
+        axis.text.y = element_blank(), 
+        legend.title = element_text(color= "white"),
+        legend.text = element_text(color= "white"), 
+        legend.background = element_rect(fill="black"), 
+        axis.ticks.length = grid::unit(0, "pt")) +
+  scale_fill_viridis_c(breaks = c(1, 10, 25, 50, 75, 100,150)) +
+  coord_fixed(ratio = 1) +
+  theme(legend.position = "none")
+
+
+
+p_years<- ggplot(popular_artists_year)  +
+  geom_point(aes(year, track_artist), color= "#1DB954", shape= "|", size=3) +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.background = element_rect(fill = "#000000"),
+        panel.background = element_rect(fill = "#000000")) +
+  theme(axis.text = element_text(family="Proxima Nova Rg", color = "#FFFFFF", size= 12)) +
+  theme(axis.text.x = element_text(angle=90)) +
+  theme(axis.text.y = element_blank()) +
+  theme(legend.title = element_text(color= "white")) +
+  theme(legend.text = element_text(color= "white")) +
+  theme(legend.background = element_rect(fill="black")) 
+
+#plot using patchwork
+p_artist_rank + p_genres + p_years
+
+
+p_song_descriptors<- ggplot(distribution_variables) +
+  geom_boxplot(aes(key, value), fill= "#999999", color = "white", alpha= 0.5, size = 1) + 
+  facet_wrap(~key, scales = 'free') +
+  theme(panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        axis.line = element_line(size = 0.5, linetype = "solid", colour = "black"),
+        plot.background = element_rect(fill = "#000000"),
+        panel.background = element_rect(fill = "#000000")) +
+  theme(axis.text = element_text(family="Proxima Nova Rg", color = "#FFFFFF", size= 12)) +
+  theme(axis.text.x = element_blank()) +
+  theme(strip.background = element_rect(fill = "#1DB954"),
+        strip.text = element_text(family="Proxima Nova Rg", color = "#FFFFFF", size =12))
+
+p_song_descriptors
+
+```
