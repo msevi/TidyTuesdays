@@ -1,0 +1,84 @@
+library(tidyverse)
+
+game_goals <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-03/game_goals.csv')
+
+
+#The objective this week is to reproduce the figure from the [Washington Post article](https://www.washingtonpost.com/graphics/2020/sports/capitals/ovechkin-700-goals/?utm_campaign=wp_graphics&utm_medium=social&utm_source=twitter): A line plot with carreer goals vs age for every player
+
+
+x<- game_goals %>%
+  select(player, date, age, team, goals) %>%
+  separate(age, into = c("years", "days"), remove = F) %>%
+  mutate(years= as.numeric(years)) %>%
+  mutate(days= as.numeric(days)) %>%
+  mutate(age_decimal= years + days/365) %>%
+  group_by(player) %>%
+  mutate(cum_goals=cumsum(goals))
+
+x_sub<- x %>%
+  filter(player %in% c("Wayne Gretzky", "Gordie Howe", "Jaromir Jagr")) %>%
+  group_by(player) %>%
+  top_n(1, age_decimal) %>%
+  mutate(label= paste(player, "\n", cum_goals, " goals"))
+
+x_sub_A<- x %>%
+  filter(player=="Alex Ovechkin") %>%
+  group_by(player) %>%
+  top_n(1, age_decimal) %>%
+  mutate(label= paste(player, "\n", cum_goals, " goals"))  
+
+x_sub_goals_game_A<- x %>%
+  filter(player=="Alex Ovechkin") %>% 
+  mutate(facet_goals= ifelse(cum_goals<100, "First 100 goals", 
+                             ifelse(cum_goals>=100 & cum_goals< 200, "100 to 200", 
+                                     ifelse(cum_goals>=200 & cum_goals<300, "200 to 300",
+                                           ifelse(cum_goals>=300 & cum_goals<400, "300 to 400",
+                                                 ifelse(cum_goals>=400 & cum_goals<500, "400 to 500",
+                                                       ifelse(cum_goals>=500 & cum_goals<600, "500 to 600",
+                                                              ifelse(cum_goals>=600,  "600 to 700", "empty")))))))) %>%
+  group_by(facet_goals) %>%
+  mutate(index= seq_along(goals)) %>%
+  data.frame()
+
+                                                      
+  
+x_sub_goals_game_A$facet_goals <- factor(x_sub_goals_game_A$facet_goals, levels=c("First 100 goals", "100 to 200", "200 to 300", "300 to 400", "400 to 500", "500 to 600", "600 to 700"))
+  
+x_sub_goals_game_A_anno<- x_sub_goals_game_A %>%
+  group_by(facet_goals) %>%
+  top_n(1)
+
+  
+ggplot() +
+  theme_minimal() +
+  geom_path(data= x, aes(age_decimal, cum_goals, group= player)) +
+  geom_hline(aes(yintercept = 700),  linetype="dashed") +
+  geom_text(data=x_sub, aes(x=age_decimal, y=cum_goals, label= label)) +
+  geom_text(data=x_sub_A, aes(x=age_decimal, y=cum_goals, label= label), color= "red", fontface="bold", family="Arial") +
+  theme(axis.title.y = element_blank()) +
+  xlab("Age") +
+  theme(axis.title.x = element_text(hjust=0, vjust = 0)) +
+  theme(panel.grid.major.x = element_blank()) +
+  theme(panel.grid.minor.x = element_blank()) +
+  scale_y_continuous(breaks = c(300, 600, 900))
+
+         
+
+ggplot() +
+  theme_minimal() +
+  geom_bar(data=x_sub_goals_game_A, aes(index, goals), stat = "identity", fill = "red") +
+  facet_grid(facet_goals~., switch = "both") +
+  scale_x_continuous(breaks = c(50, 100, 150), position = "top") +
+  theme(panel.grid.minor.y = element_blank()) +
+  theme(panel.grid.minor.x = element_blank()) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_blank()) +
+  theme(axis.ticks.y = element_blank()) +
+  theme(axis.text.y = element_blank()) + 
+  theme(panel.background = element_rect(fill = "light gray")) +
+  theme(strip.text.y = element_text(angle = 180)) +
+  geom_curve(data= x_sub_goals_game_A_anno, aes(x= index + 2 , y=goals +1, xend = index, yend=goals),
+             curvature = .2, arrow = arrow(length = unit(1, "mm"))) +
+  geom_text(data= x_sub_goals_game_A_anno, aes(x= index +1 , y=goals +2, label= index))
+  
+            
