@@ -1,0 +1,152 @@
+---
+title: "Tidy_Tuesday_2020_02_11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Tidy Tuesday: Hotels
+
+This R Markdown documents exploration of [Tidy Tuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-02-11).  
+The objective for this week is to compare data from City and Resort hotels. Both hotels are located in Portugal, at the resort region of Algarveand and at the city of Lisbon. 
+
+Tidyverse makes a plug for a few time series analysis packages, so I'll try incorporating them here. 
+
+(1) What type of eating options do people book for the two hotels?
+(2) Where do solo travelers come from?
+
+lead time: Number of days that elapsed between the entering date of the booking into the PMS and the arrival date
+
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(skimr)
+library(countrycode)
+library(lubridate)
+library(ggthemes)
+library(patchwork)
+
+
+library(tsibble)
+library(feasts)
+library(fable)
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+hotels <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-11/hotels.csv')
+```
+
+## Check Data Structure
+
+This time instead of using base R str function, I will be using [skimr](https://github.com/ropensci/skimr) package, since it can:
+
+> display summary statistics the user can skim quickly to understand their data
+
+It also outputs knited results which is more aesthetically pleasing. 
+
+```{r data_structure, warning=FALSE, message=FALSE}
+hotels %>%
+  skim() 
+
+```
+
+
+## Data Wrangle
+
+```{r data_wrangling, echo=FALSE, warning=FALSE, message=FALSE}
+
+hotels_reduced<- hotels %>% 
+  filter(is_canceled==0) %>%
+  filter(!country=="NULL") %>%
+  select(-is_canceled, -required_car_parking_spaces, -reserved_room_type, -assigned_room_type, -required_car_parking_spaces, -market_segment, -distribution_channel, -agent, -company ) %>%
+  mutate(arrival_date = ymd(paste(arrival_date_year, arrival_date_month, arrival_date_day_of_month, sep = "-"))) %>%
+  select(-arrival_date_year, -arrival_date_month, -arrival_date_day_of_month, -arrival_date_week_number) %>%
+  mutate(total_stay= stays_in_weekend_nights + stays_in_week_nights) %>%
+  filter(!total_stay==0) %>%
+  select(-stays_in_weekend_nights, -stays_in_week_nights) %>%
+  mutate(total_guest= adults +children+babies) %>%
+  filter(!total_guest==0) %>%
+  select(-adults, -children, -babies) %>%
+  mutate(country_name=countrycode(country, 'iso3c', 'country.name')) %>%
+  filter(!is.na(country_name)) %>% #this removes china, that was code with 2 letter code instead of 3
+  select(-country, -deposit_type, -customer_type, -reservation_status, -previous_cancellations, -booking_changes, -total_of_special_requests) %>%
+  rename(departure_date = "reservation_status_date")
+
+
+#What type of eating options do people book for the two hotels?
+hotels_1<- hotels_reduced %>%
+  select(hotel, meal) %>%
+  group_by(hotel, meal) %>%
+  summarise(counts= n())
+
+#Where do solo travelers come from?
+hotels_2<- hotels_reduced %>%
+  mutate(year_visited = year(departure_date)) %>%
+  filter(total_guest==1) %>%
+  select(hotel, country_name, adr, year_visited)
+
+#Let's look at mean values
+hotels_3<- hotels_reduced %>%
+  mutate(year_visited = year(departure_date)) %>%
+  filter(total_guest==1) %>%
+  select(hotel, country_name, adr, year_visited) %>%
+  group_by(hotel, country_name, year_visited) %>%
+  summarise(average_adr_country= mean(adr))
+```
+
+## Plot
+Type of meal booked. Categories are presented in standard hospitality meal packages:  
+
+(1) Undefined/SC – no meal package  
+(2) BB – Bed & Breakfast  
+(3) HB – Half board (breakfast and one other meal – usually dinner)  
+(4) FB – Full board (breakfast, lunch and dinner)  
+
+```{r plot_1, warning=FALSE, message=FALSE}
+
+ggplot(hotels_1, aes(meal, counts)) +
+  theme_fivethirtyeight() +
+  geom_bar(aes(fill= hotel), stat = "identity", position = "dodge") +
+  geom_text(aes(y= counts +1, label=counts), position = position_dodge(0.9), vjust=0, size=3.5) +
+  ggtitle("Selected eating options")
+
+```
+
+The Average Daily Rate (ADR) defined by dividing the sum of all lodging transactions by the total number of staying nights. 
+
+```{r plot_2, warning=FALSE, message=FALSE}
+
+ggplot(hotels_2) +
+  theme_fivethirtyeight() +
+  geom_boxplot(aes(country_name, adr)) +
+  facet_grid(year_visited ~ hotel, scales = "free", space = "free") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0)) +
+  ylab("Average daily spending per guest") + #interesting behaviour
+  ggtitle("Average Daily Rate of Solo Travelers")
+
+```
+
+```{r plot_3, warning=FALSE, message=FALSE}
+
+h3_1<- ggplot(hotels_3 %>% filter(hotel=="City Hotel")) +
+  theme_fivethirtyeight() +
+  geom_bar(aes(country_name, average_adr_country), fill="#FFC20A", stat = "identity", position = "dodge") +
+  coord_flip() +
+  facet_grid(~year_visited, scales = "free", space = "free") +
+  ggtitle("Average Daily Rate of Solo Travelers \nper Country for City Hotel")
+
+
+h3_2<- ggplot(hotels_3 %>% filter(hotel=="Resort Hotel")) +
+  theme_fivethirtyeight() +
+  geom_bar(aes(country_name, average_adr_country), fill="#D81B60", stat = "identity", position = "dodge") +
+  coord_flip() +
+  facet_grid(~year_visited, scales = "free", space = "free") +
+  ggtitle("Average Daily Rate of Solo Travelers \nper Country for Resort Hotel")
+
+h3_1 + h3_2
+```
