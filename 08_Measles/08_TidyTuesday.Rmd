@@ -1,0 +1,100 @@
+---
+title: "Flexdashboard Measles"
+output: 
+  flexdashboard::flex_dashboard:
+    theme: paper
+    orientation: rows
+    vertical_layout: fill
+    source_code: embed
+---
+
+```{r, include = FALSE}
+library(ggplot2)
+library(tidyverse)
+library(skimr)
+library(flexdashboard)
+library(DT)
+library(leaflet)
+library(crosstalk)
+library(maps)
+library(plotly)
+
+measles <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-02-25/measles.csv')
+measles_df<- measles %>% 
+  filter(state== "Massachusetts") %>%
+  filter(city %in% c("Cambridge", "Boston", "Brookline", "Chestnut Hill", "Dorchester", "East Boston", "Jamaica Plain", "Malden", "Newton", "Newton Center", "Roxbury", "South Boston", "Watertown", "West Newton", "West Roxbury")) %>%
+  filter(type %in% c("Public", "Charter", "Private")) %>% 
+  select(-district, -overall, -xrel, -xmed, -xper, -index)
+
+shared_df <- SharedData$new(measles_df)
+```
+
+Row 
+-------------------------------------
+
+### Data Skim
+
+```{r table}
+measles %>% 
+  skim()
+```
+
+### Data Table {.tabset .tabset-fade}
+
+```{r table1}
+DT::datatable(shared_df, filter = "top",  # allows filtering on each column
+    extensions = c(
+      "Buttons",  # add download buttons, etc
+      "Scroller"  # for scrolling down the rows rather than pagination
+    ),
+    rownames = FALSE,  # remove rownames
+    style = "bootstrap",
+    class = "compact",
+    width = "100%",
+    options = list(
+      dom = "Blrtip",  # specify content (search box, etc)
+      deferRender = TRUE,
+      scrollY = 300,
+      scroller = TRUE,
+      columnDefs = list(
+        list(
+          visible = FALSE,
+          targets = c(8:9)
+        )
+      ), 
+      buttons = list(
+        I("colvis"),  # turn columns on and off
+        "csv",  # download as .csv
+        "excel"  # download as .xlsx
+      )
+    ) )
+```
+
+
+Row 
+-------------------------------------
+### Map
+
+```{r map}
+mapStates <- map("state", fill = TRUE, plot = FALSE)
+
+leaflet(data = mapStates) %>% 
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addCircleMarkers(data = shared_df, color = c("blue", "red", "orange"), fillColor = "type") %>%
+  addMeasure()
+```
+
+### Density plot
+```{r plot1}
+g<- ggplot(shared_df, aes(mmr, fill = type), alpha=0.5) +
+  geom_density() +
+  facet_grid(year~.) +
+  scale_fill_manual(values = c("blue", "red", "orange")) + 
+  theme(legend.position="bottom")
+
+ggplotly(g) %>% 
+  layout(legend = list(orientation = "h", x = 0.4, y = -0.2)) %>%
+  highlight("plotly_selected")
+
+```
+
