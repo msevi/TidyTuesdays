@@ -1,0 +1,193 @@
+---
+title: "Tidy_Tuesday_2020_04_07"
+author: "Maria Sevillano"
+output: rolldown::scrollama_sidebar
+---
+
+
+**Scrollytelling**
+
+Is useful for telling stories in an interactive way. A cool example can be found in 
+[If the moon was only one pixel](https://joshworth.com/dev/pixelspace/pixelspace_solarsystem.html). Also NYT has multiple articles employing this technique, such as this one about [climate change in Bolivia](https://www.nytimes.com/interactive/2016/07/07/world/americas/bolivia-climate-change-lake-poopo.html) or this one about [Trump's victory](https://www.nytimes.com/interactive/2016/11/08/us/elections/how-trump-pushed-the-election-map-to-the-right.html?em_pos=small&emc=edit_up_20161109&nl=upshot&nl_art=1&nlid=72362133&ref=img&te=1) 
+
+```{r, echo=FALSE}
+emo::ji("poop")
+```
+
+Medium has a nice article about [scrollytelling](https://medium.com/@Shorthand/an-introduction-to-scrollytelling-5c19c3935c48).  
+
+The underlying design is usually based on JavaScript libraries, such as [scrollama](https://github.com/russellgoldenberg/scrollama). Here's a brief [introduction](https://pudding.cool/process/introducing-scrollama/) to it. 
+
+In order to implement it in R markdown, I used a template called [rolldown](https://github.com/yihui/rolldown).  
+
+In this [TidyTuesday](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-03-31) I'll be going through materials used in beer production.
+
+```{r, echo=FALSE}
+emo::ji("beer")
+```
+
+#
+
+```{r, fig.dim=c(8, 4), echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggthemes)
+library(scales)
+
+ggplot() +
+  theme_void()+
+  annotate("text", x = 4, y = 25, label = "Grain products and non-grain products are used for beer brewing. \nAnd a whole lot of materials is used yearly for beer production. \nWe will be looking at time series of pounds of materials used from 2007-2015 in the US, \nand we will compare material use between current year and prior year.
+           The original data source is the Alcohol and Tobacco Tax and Trade Bureau (TTB). ") 
+```
+
+![Happy Beer brewing!](https://images.unsplash.com/photo-1559526642-c3f001ea68ee?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2534&q=80){width=800, height=400}
+
+```{css, echo=FALSE}
+.level1 {
+  min-height: 400px;
+  border: 1px solid;
+  margin-bottom: 4em;
+  padding: 1em 2em 2em;
+  opacity: 0;
+}
+.is-active {
+  opacity: 0;
+}
+body {
+  margin-bottom: 35vh;
+  margin-left: 4em;
+}
+```
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+
+brewing_materials <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-03-31/brewing_materials.csv')
+
+brewing_materials_df<- brewing_materials %>%
+  mutate(year_month= date(paste(year, month, "1", sep = "-"))) %>%
+  select(material_type, year_month, ytd_current, ytd_prior_year, type) %>%
+  gather(ytd, pounds_used, -material_type, -year_month, -type) %>%
+  filter(!is.na(pounds_used)) %>%
+  mutate(type=ifelse(type=="Malt and malt products", "Malts", type)) %>%
+  mutate(type=ifelse(type=="Rice and rice products", "Rice", type)) %>%
+  mutate(type=ifelse(type=="Corn and corn products", "Corn", type)) %>%
+  mutate(type=ifelse(type=="Barley and barley products", "Barley", type)) %>%
+  mutate(type=ifelse(type=="Wheat and wheat products", "Wheat", type)) %>%
+  mutate(type=ifelse(type=="Sugar and syrups", "Sugars", type)) %>%
+  mutate(type=ifelse(type=="Other", "Other", type)) %>%
+  mutate(type=ifelse(type=="Hops (used as extracts)", "Hops (extracts)", type)) %>%
+  mutate(type=as.factor(type)) %>%
+  mutate(type= fct_relevel(type, "Malts","Rice", "Corn", "Barley", "Wheat", "Sugars","Other", "Hops (dry)", "Hops (extracts"))
+
+```
+
+ 
+
+#
+```{r, fig.dim=c(8, 4), echo=FALSE}
+
+ggplot(brewing_materials_df %>% filter(material_type=="Grain Products") %>% filter(type=="Malts")) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Grain Products", subtitle = "Malt is grain that has been converted into sugar. That sugar is consumed by yeast to create alcohol; \na process called fermentation. Grain becomes malt, which becomes beer.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Grain Products") %>% filter(type%in% c("Malts","Rice"))) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label="Materials used for brewing beer: Grain Products", subtitle = "Adjuncts are unmalted, starchy things (i.e. cereal grain) with no sugars available (e.g. crystal malts), \nso they can't be steeped for extract brewing. They also don't have enzymes like malted grains, \nthey need to be mashed with base malt to extract their sugars.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Grain Products") %>% filter(type %in% c("Malts", "Rice", "Corn"))) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label="Materials used for brewing beer: Grain Products", subtitle = "Adjuncts are unmalted, starchy things (i.e. cereal grain) with no sugars available (e.g. crystal malts), \nso they can't be steeped for extract brewing. They also don't have enzymes like malted grains, \nthey need to be mashed with base malt to extract their sugars.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Grain Products") %>% filter(type %in% c("Malts","Rice", "Corn", "Barley"))) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Grain Products", subtitle = "Barley is the preferred grain for beer. The process of malting involves soaking the barley, \nallowing it to germinate, and then stopping germination with heat.\nExamples of barley malts are pale malt, Pilsner malt, Vienna malt, Munich malt, mild ale malt, and more...") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Grain Products")) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Grain Products", subtitle = "The staple grain of Europe is wheat. Weissbiers have a characteristic pale color. \nThe difference between barley and wheat is in how they're crushed.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+```
+
+
+```{r, fig.dim=c(8, 4), echo=FALSE}
+
+ggplot(brewing_materials_df %>% filter(material_type=="Non-Grain Products") %>% filter(type=="Sugars")) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Non- Grain Products", subtitle = "Starches require mashing to extract sugars, alternatives for healthy yeast fermentation include: \nall sugars, fruits, juices, honey, maple syrup and molasses.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Non-Grain Products") %>% filter(type %in% c("Sugars","Other"))) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle("Materials used for brewing beer: Non-Grain Products") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Non-Grain Products") %>% filter(type %in% c("Sugars","Other", "Hops (dry)"))) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Non- Grain Products", subtitle = "Hops provide both bitterness (IBUs) and a wide variety of flavor to numerous beer styles.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+ggplot(brewing_materials_df %>% filter(material_type=="Non-Grain Products")) +
+  theme_pander() +
+  geom_line(aes(x=year_month, y=pounds_used, color= type, linetype= ytd)) +
+  scale_y_log10(labels = unit_format(unit = "M", scale = 1e-6)) +
+  theme(axis.title.x = element_blank()) +
+  ylab("Pounds of material used") +
+  ggtitle(label = "Materials used for brewing beer: Non- Grain Products", subtitle = "Hop extracts  are essentially a concentrate of the alpha acids and oils naturally found within the hop itself.") +
+  guides(color = guide_legend(order = 1), linetype = guide_legend(order = 2)) +
+  scale_color_discrete(name="Material") +
+  scale_linetype(name= "Cummulative \nyear to date")
+
+```
