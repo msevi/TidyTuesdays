@@ -25,7 +25,14 @@ So far I have looked at data about:
 3.  Spotify
 4.  San Francisco trees
 5.  NFL attendance
+6.  Hotels
+7.  Measles
+8.  NHL
+9.  College tuition
+10. The Office
+11. Brain injuries
+12. Beer
 
-5 out of 6, what a streak!
+12 out of 13, what a streak!
 
 ![](README_files/figure-markdown_github/unnamed-chunk-1-1.png)
