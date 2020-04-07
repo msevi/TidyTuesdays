@@ -27,12 +27,20 @@ So far I have looked at data about:
 3. Spotify  
 4. San Francisco trees  
 5. NFL attendance  
+6. Hotels  
+7. Measles  
+8. NHL  
+9. College tuition  
+10. The Office  
+11. Brain injuries  
+12. Beer  
 
-5 out of 6, what a streak!
+
+12 out of 13, what a streak!
 
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
-gauge(5, min = 0, max = 48, gaugeSectors(
+gauge(12, min = 0, max = 48, gaugeSectors(
   success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
 ), label = 'Projects')
 ```
