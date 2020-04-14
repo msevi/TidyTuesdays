@@ -1,0 +1,114 @@
+---
+title: "Tidy_Tuesday_2020_04_14"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Tour de France
+
+The objective for this week is to analyse data about Tour de France. We often forget that tables are very useful visualization and prefered in [certain situations](https://flourish.studio/2019/03/11/how-make-interactive-table/). Because of this, I decided to give the package `gt` a try. This package allows you to showcase *great looking tables* using gramar of tables much like ggplot2 grammar of graphics. You can find an introductury tutorial [here](https://blog.rstudio.com/2020/04/08/great-looking-tables-gt-0-2/).
+
+
+Back to traditional visualization, I would like to see the effect of the numeric variables (age, height, weight, distance) on the overall time (time_overall) to complete the race. 
+
+Also of interest is the age of the winner, assuming the won at peak athletic performance and the age the participant died at.
+
+margin between winner and runner up
+
+## Load libraries
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(gt)
+library(skimr)
+library(ggthemes)
+```
+
+## Get Data
+
+```{r get_data, warning=FALSE, message=FALSE}
+tdf_winners <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-07/tdf_winners.csv')
+
+```
+
+## Data structure
+```{r data_structure}
+skim(tdf_winners)
+
+```
+
+## Data Wrangling 
+
+```{r data_wrangling, message=FALSE}
+#gt
+
+tdf_winners %>%
+  select(winner_name, birth_country, birth_town) %>%
+  distinct %>%
+  group_by(birth_country, birth_town) %>%
+  summarize(Winners= n()) %>%
+  gt(rowname_col = "birth_town") %>%
+  tab_header(title = md("&#128690; Tour de France &#128690;")) %>%
+  summary_rows(
+    groups = TRUE,
+    columns = vars(Winners),
+    fns = list(TOTAL = "sum"),
+    formatter = fmt_number,
+    decimals = 0,
+    use_seps = TRUE
+  ) %>%
+  opt_all_caps(locations = "row_group") %>%
+  tab_options(
+    summary_row.background.color = "black",
+    row_group.background.color = "yellow",
+    heading.background.color = "white",
+    heading.title.font.size = 20,
+    column_labels.background.color = "black",
+    stub.background.color = "white",
+    stub.border.style = "dashed",
+    stub.border.width = "1px",
+    summary_row.border.color = "#989898",
+    table.width = "50%"
+  )
+
+tdf_time<- tdf_winners %>%
+  select(age, height, weight, distance, time_overall) %>%
+  drop_na() %>%
+  gather(variable, value, -time_overall)
+
+tdf_margin<- tdf_winners %>%
+  mutate(overall_second= time_overall + time_margin, year= year(start_date)) %>%
+  select(year, time_overall, overall_second) %>%
+  drop_na()
+
+
+```
+
+## Visualizations
+
+```{r }
+ggplot(tdf_time) +
+  theme_few() +
+  geom_point(aes(value, time_overall)) +
+  facet_wrap(~variable, scales = "free") +
+  ylab("Overall time in race (hrs)") +
+  ggtitle("Tour de France winners ") +
+  theme(axis.title.x = element_blank()) +
+  theme(panel.background = element_rect(fill="yellow")) 
+
+ggplot(tdf_margin) +
+  theme_few() +
+  geom_segment(aes(x=overall_second, xend=time_overall, y= year, yend=year), size=5, color="yellow") +
+  scale_y_continuous(limits = c(1900, 2020), breaks = seq(1900, 2020, by = 5)) +
+  ylab("Edition") +
+  xlab("Overall time in race (hrs)") +
+  theme(panel.background = element_rect(fill="black")) +
+  geom_text(aes(200, 2010), label="The margin between runner up and winner has \nshrunk over the years", color= "white")
+
+```
+
+
