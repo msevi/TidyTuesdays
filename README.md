@@ -12,11 +12,11 @@ As a group exercise the objectives are:
 -   learn from each other
 -   do (some) research outside our own and have fun!
 
-In this repo I will be documenting *my* contribution.
+In this repo I will be documenting *my* contribution. In most folders, there will be an md file. If you'd like to have a human readable document click on this file, else you can download the Rmarkdown also within the folders and run the commands in your local computer.
 
-Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week.
+Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week. The analyses/visualizations might not be the most sophisticated, but a lot of learning is happening! :)
 
-Please exercise caution and your own judgement if using any of the info herein.
+Please exercise caution and your own judgement if using any of the info herein. Also note, that some of the renderings are not faithfully reproduced when exported to a markdown file.
 
 So far I have looked at data about:
 
@@ -32,7 +32,8 @@ So far I have looked at data about:
 10. The Office
 11. Brain injuries
 12. Beer
+13. Tour de France
 
-12 out of 13, what a streak!
+13 out of 14, what a streak!
 
 ![](README_files/figure-markdown_github/unnamed-chunk-1-1.png)
