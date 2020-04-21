@@ -4,6 +4,31 @@ Tidy\_Tuesday\_2020\_04\_21
 Tidy Tuesday: Best Rap Artists
 ==============================
 
+This week's objective is to visualize [data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-04-14/readme.md) on hip hop songs rankings.
+
+I came across [this](https://resources.rstudio.com/rstudio-conf-2020/the-glamour-of-graphics-william-chase?wvideo=fhb2ifduim) presentation by [William Chase](https://www.williamrchase.com/) on the Glamour of Graphics. The main takeaway is that in order to make aesthetically pleasing visualizations you should pay attention to 3 characteristics: (1) layout, (2) typography, and (3) color.
+
+1.  **Layout**
+    -   Appropriate use of *titles* can go a long way in decluttering your plots, it makes axis titles redundant and could aid with legend positioning or removal. See `ggtext` [package](https://github.com/wilkelab/ggtext)
+    -   *Alignments* create symmetry and a seamless experience for redability. Align titles all the way to the start of the plot (including axis text). Avoid having people tilt their heads: rotate your plot!
+    -   Mind your lines, question if background *grid lines* are neccessary.
+    -   Don't be afraid of *whitespace*: less is more! If you cram in too much information, the message can get lost.
+2.  **Typography**
+    -   Make use of other *fonts*, more often than not built-in fonts are outdated. Download [free fonts](fonts.google.com)
+    -   Maintain *hierarchy* (size, weight, color, spacing, contrasting typespace) to guide the reader.
+    -   Avoid using oldstyle *numbering*, do use lining numbering in which the height is consistent. Similarly, avoid using proportional numbering, do use a tabular kind for width consistency.
+3.  **Color**
+    -   Think about *color theory*. When choosing hues, use color wheel to convey sentiments:
+        -   complementary (high contrast)
+        -   analogous (calm, harmonious)
+        -   triadic (vibrant, contrast)
+    -   Control colors by Hue, saturation, lightness/brightness (*HSB*).
+    -   Create *your own palette* using an eyedropper tool (e.g. color slurp tool for Mac)
+    -   Mind *accessibility*, think about color-blindness for example.
+    -   For plot *backgrounds*, avoid completely white or black, pastel colors are a good option.
+
+Using these principles I would like to see how songs get ranked across time, and which songs are ranked the highest.
+
 Load libraries
 --------------
 
@@ -13,6 +38,7 @@ library(skimr)
 library(patchwork)
 library(ggpubr)
 library(cowplot)
+library(ggtext)
 ```
 
 Get Data
@@ -125,7 +151,8 @@ p1<-ggplot() +
   geom_vline(xintercept = 2000) +
   geom_bracket(xmin = 1990, xmax = 2000, y.position = 30,
     label = "The golden era of Hip-hop") +
-  ylab("Frequency") 
+  ggtitle("Number of songs ranked for each year: the 90's don't disappoint") +
+  theme(plot.title.position = "plot", axis.title = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 
 p2<- ggplot() +
@@ -140,7 +167,17 @@ p2<- ggplot() +
              curvature = .2, arrow = arrow(length = unit(1, "mm")), color="gold") +
   geom_label(data=rank_top, aes(x=c(2012, 2005, 2010), points + 20, label=label, fill=gender), color= "gold", fontface = "bold") +
   scale_color_manual(values=c("grey", "black", "white")) +
-  scale_fill_manual(values=c("grey", "black", "white")) 
+  scale_fill_manual(values=c("grey", "black", "white")) +
+  labs(title = "Number of points for songs by <strong>male</strong></b>, 
+    <strong><span style='color:#808080'>female</span></strong></b>, and <strong><span style='color:#FFFFFF'>mixed artists</span></strong></b> by year") +
+  theme(plot.title = element_textbox_simple(
+      size = 13,
+      lineheight = 1,
+      padding = margin(5.5, 5.5, 5.5, 5.5),
+      margin = margin(0, 0, 5.5, 0),
+      fill = "gold"
+    ), 
+        plot.title.position = "plot", axis.title = element_blank(), panel.grid.major.x = element_blank(), panel.grid.minor.x = element_blank())
 
 p1
 ```
