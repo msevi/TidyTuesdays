@@ -1,0 +1,86 @@
+---
+title: "Tidy_Tuesday_2020_04_21 "
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Best Rap Artists
+
+## Load libraries
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(skimr)
+library(patchwork)
+library(ggpubr)
+library(cowplot)
+```
+
+## Get Data
+
+```{r get_data, warning=FALSE, message=FALSE}
+polls <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/polls.csv')
+rankings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-14/rankings.csv')
+
+```
+
+## Data structure
+```{r data_structure}
+skim(polls)
+skim(rankings)
+```
+
+## Data Wrangling 
+
+```{r data_wrangling, message=FALSE}
+rank_freq<- rankings %>% 
+  group_by(year) %>% 
+  summarise(Freq= n())
+
+rank_top<- rankings %>% 
+  group_by(gender) %>% 
+  top_n(1, points) %>% 
+  mutate(label= paste(title, artist, year, sep = "\n"))
+
+```
+
+## Visualizations
+
+```{r }
+p1<-ggplot() +
+  theme_minimal() +
+  geom_bar(data= rank_freq, aes(year, Freq), stat = "identity") +
+  geom_bar(data= rank_freq %>% filter(year>=1990 & year<=2000), aes(year, Freq), stat = "identity", fill = "gold") +
+  geom_vline(xintercept = 1990) +
+  geom_vline(xintercept = 2000) +
+  geom_bracket(xmin = 1990, xmax = 2000, y.position = 30,
+    label = "The golden era of Hip-hop") +
+  ylab("Frequency") 
+
+
+p2<- ggplot() +
+  theme_minimal() +
+  geom_point(data= rankings, aes(year, points, color=gender), alpha=0.8, size=2)  +
+  geom_vline(xintercept = 1990) +
+  geom_vline(xintercept = 2000) +
+  theme(legend.position = "none") +
+  ylab("Points") +
+  geom_point(data= rankings, aes(year, points, color=gender), alpha=0.8, size=2, shape= 1, color="black") +
+  geom_curve(data= rank_top, aes(xend=year , yend= points, x = c(2012, 2005, 2010), y=points + 20),
+             curvature = .2, arrow = arrow(length = unit(1, "mm")), color="gold") +
+  geom_label(data=rank_top, aes(x=c(2012, 2005, 2010), points + 20, label=label, fill=gender), color= "gold", fontface = "bold") +
+  scale_color_manual(values=c("grey", "black", "white")) +
+  scale_fill_manual(values=c("grey", "black", "white")) 
+
+p1
+
+p2
+
+
+
+```
+
+
