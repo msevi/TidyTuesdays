@@ -1,0 +1,162 @@
+---
+title: "Tidy_Tuesday_2020_05_06 "
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Broadway
+
+This week's objective is to visualize Broadway [data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-04-28/readme.md){target="_blank"}. 
+
+Watching Broadway shows is one of my hobbies! So the main objective of this exercise is to take a closer look at shows I've seen live:  
+* Hamilton  
+* Miss Saigon  
+* Hello, Dolly!  
+* Dear Evan Hansen  
+* The Book of Mormon  
+
+Objectives:  
+
+1. Get an idea on revenue changes across time
+2. Highlight particular shows in context to all other shows
+
+For this week I'll use a new package: `gghighlight`, an extension to ggplot for, you guessed it,  highlithing data.
+
+First things first, looking at the [blogpost](https://www.alexcookson.com/post/most-successful-broadway-show-of-all-time/){target="_blank"} where this week's data came from, we can see that the monetary values are not adjusted for inflation. That's why we're provided with the cpi data. CPI stands for consumer price index. A **Consumer Price Index** measures changes in the price level of a weighted average market basket of consumer goods and services purchased by households. The CPI is a statistical estimate constructed using the prices of a sample of representative items whose prices are collected periodically (Source: [Wikipedia](https://en.wikipedia.org/wiki/Consumer_price_index){taget="_blank"}). Therefore, we'll [adjust](https://en.wikipedia.org/wiki/Real_versus_nominal_value_(economics)){target="_blank"} **nominal** value of dollars (i.e. not adjusted for inflation) to **real** dollars. 
+
+I'll use colors related to the [playbill](https://www.playbill.com/article/the-evolution-of-the-playbill-design-from-18852018){target="_blank"} of each show.  
+
+I will also be using the package `hrbrthemes` which provides typography-centric themes, and compare to another plot using my custom theme. More extensive discussion about fonts and the package can be found [here](https://github.com/hrbrmstr/hrbrthemes){target="_blank"}
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(lubridate)
+library(scales)
+library(ggtext)
+library(skimr)
+library(gghighlight)
+library(hrbrthemes)
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+grosses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/grosses.csv', guess_max = 40000)
+synopses <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/synopses.csv')
+cpi <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-04-28/cpi.csv')
+
+```
+
+## Data Wrangling 
+```{r data_wrangling, message=FALSE}
+#Inflation adjustemnt factor
+cpi <- cpi %>%  
+  mutate(jan_2020_dollars = cpi[year_month == "2020-01-01"] / cpi) %>%
+  mutate(year = year(year_month)) %>%
+  mutate(month = month(year_month)) 
+
+#Join data
+adjusted_grosses<- grosses %>%
+  left_join(synopses) %>%
+  mutate(year = year(week_ending)) %>%
+  mutate(month = month(week_ending)) %>%
+  left_join(cpi) %>%
+  mutate(weekly_gross_adjusted = weekly_gross * jan_2020_dollars) %>%
+  mutate(avg_ticket_price_adjusted = avg_ticket_price * jan_2020_dollars) %>%
+  mutate(color=plyr::mapvalues(show, c("Dear Evan Hansen", "Hamilton", "Hello, Dolly!", "Miss Saigon", "The Book of Mormon"), c("#6dc4df","#d8b365", "#E42020", "#863024", "black" )))
+
+col <- as.character(adjusted_grosses$color)
+names(col) <- as.character(adjusted_grosses$show)
+
+slected_adjusted_grosses<- adjusted_grosses %>% 
+  filter(show %in% c("Hamilton", "Miss Saigon", "Hello, Dolly!", "Dear Evan Hansen", "The Book of Mormon"))
+
+labels<- slected_adjusted_grosses %>%
+  group_by(show, color) %>%
+  summarise(x= min(week_ending), y = max(weekly_gross_adjusted), y2=max(pct_capacity))
+
+col2 <- as.character(slected_adjusted_grosses$color)
+names(col2) <- as.character(slected_adjusted_grosses$show)
+
+```
+
+## Data structure
+```{r data_structure}
+skim(adjusted_grosses)
+```
+
+
+## Visualizations
+For the conversion of dollars, in order to adjust for inflation, we used the CPI value reccommeded by the original data scraper. The CPI measure used is: “All items less food and energy in U.S. city average, all urban consumers, seasonally adjusted”. The rationale behind it is that, this metric will be representative of the purchasing power of a New York City theatre-goer.
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+my_theme<- theme_bw() +
+  theme(legend.position = "none",
+        axis.title = element_blank(), 
+        plot.title = element_markdown(face = "bold"),
+        plot.title.position = "plot",
+        axis.text = element_text(face="bold"),
+        panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank())
+
+ggplot(cpi, aes(year_month, jan_2020_dollars)) +
+  geom_line() +
+  labs(title= "Decline of purchasing power in NYC from 1985 to 2020") +
+  my_theme +
+  geom_label(x=14000, y=2, label= "With $100 in June 1985, I could purchase  $244 worth of tickets in January 2020")
+
+```
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+ggplot(adjusted_grosses) +
+  geom_line(aes(week_ending, weekly_gross, group=show, color=show)) +
+  labs(title = "Weekly box office gross per show since 1985 highlighting <br><span style='color:#6dc4df;'>Dear Evan Hansen</span>,  <span style='color:#d8b365;'>Hamilton</span>, <span style='color:#E42020;'>Hello, Dolly!</span>, <span style='color:#863024;'>Miss Saigon</span>, and <span style='color:black;'>The Book of Mormon</span></br>") +
+  scale_y_continuous(labels = scales::dollar) +
+  gghighlight(show %in% c("Hamilton", "Miss Saigon", "Hello, Dolly!", "Dear Evan Hansen", "The Book of Mormon"),
+              use_direct_label = FALSE) +
+  scale_color_manual(values = col) +
+  my_theme
+```
+
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+ggplot() +
+  geom_point(dat = slected_adjusted_grosses, aes(week_ending, weekly_gross_adjusted, color=show)) +
+  facet_wrap(~show, scales = "free") +
+  labs(title = "Weekly box office gross sales per week since show started") +
+  scale_y_continuous(labels = scales::dollar)  +
+  my_theme +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank()) +
+  geom_label(data= labels, aes(x,y, label=show), color= labels$color, fontface="bold",  vjust = "inward", hjust = "inward") +
+  scale_color_manual(values = c("#6dc4df","#d8b365", "#E42020", "#863024", "black" ))
+  
+
+
+```
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+ggplot(slected_adjusted_grosses) +
+  geom_line(aes(week_ending, pct_capacity, color=show)) +
+  facet_wrap(~show, scales = "free") +
+  labs(title = "Theather occupancy per week since show started")+
+  my_theme +
+  theme(strip.background = element_blank(),
+        strip.text = element_blank()) +
+  geom_label(data= labels, aes(x,y2, label=show), color= labels$color, fontface="bold",  vjust = "inward", hjust = "inward") +
+  scale_color_manual(values = c("#6dc4df","#d8b365", "#E42020", "#863024", "black" ))
+```
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+ggplot(slected_adjusted_grosses) +
+  geom_line(aes(week_ending, pct_capacity, color=show)) +
+  facet_wrap(~show, scales = "free") +
+  labs(title = "Theather occupancy per week since show started") +
+  theme_ipsum() +
+  theme(legend.position = "none")
+```
