@@ -1,0 +1,116 @@
+---
+title: "Tidy_Tuesday_2020_05_12 "
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Animal Crossing
+
+The objective this week is to visualize [data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-05/readme.md){target="_blank"} from Animal Crossing, a video game released by Nintendo. Particularly, I want to visualize the distribution of character personalities by different species/gender. Additionally, I will represent real evolutionary distances between top species with a phylogenetic tree with tips labeled as character of that particular species. The newick tree was generated using [phyloTree](https://phylot.biobyte.de/index.cgi){target="_blank"}.
+
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(readxl)
+library(ggimage)
+library(ggtree)
+library(ggtext)
+library(gcookbook)
+library(hrbrthemes)
+library(extrafont)
+library(patchwork)
+library(gt)
+
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+items <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-05/items.csv')
+villagers <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-05/villagers.csv')
+mapping_species<- read_excel("species_mapping.xlsx", col_names = c("tip_label", "species"))
+phyloT<- read.tree("phyloT.nwk")
+
+```
+
+## Data Wrangling 
+```{r data_wrangling, message=FALSE}
+#font_import()
+#fonts()
+
+villagers_species_gender_personality<- villagers %>%
+  group_by(species, gender, personality) %>%
+  tally %>%
+  filter(!personality=="uchi")
+
+
+top_5_species<- villagers %>% 
+  group_by(species) %>% 
+  tally %>% 
+  arrange(desc(n)) %>% 
+  top_n(5) %>%
+  pull(species)
+
+mapping_info<- villagers %>%
+  filter(species %in% top_5_species) %>%
+  filter(personality=="normal") %>%
+  group_by(species) %>%
+  filter(row_number()==1) %>%
+  select(url) %>%
+  left_join(mapping_species) %>%
+  mutate(file_name= str_extract(url, "(?<=thumb/).+"))
+
+
+tree_tip<- as.data.frame(phyloT$tip.label) 
+colnames(tree_tip)<- "NCBI"
+tree_tip<- tree_tip %>%
+  mutate(name= plyr::mapvalues(NCBI, mapping_info$tip_label, mapping_info$file_name))
+
+phyloT$tip.label<- as.character(tree_tip$name)
+```
+
+
+## Visualizations
+
+Table format
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+villagers_species_gender_personality %>%
+  filter(species %in% top_5_species) %>% 
+  ungroup() %>%
+  pivot_wider(names_from = species, values_from = n, values_fill = list(n=0)) %>%
+  group_by(gender) %>%
+  gt(rowname_col = "personality") %>%
+  tab_spanner(
+    label = "Species",
+    columns = vars(cat, duck, frog, rabbit, squirrel)
+    ) 
+```
+
+Heatmap and phylogenetic tree.
+The character images were chosen quasi randomly. 
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+ 
+hm<- ggplot(villagers_species_gender_personality %>% filter(species %in% top_5_species) , aes(species, personality)) +
+  geom_tile(aes(fill=n)) +
+  facet_grid(~gender, scale="free") +
+  scale_fill_viridis_c(option = "magma") +
+  theme_ipsum(grid="XY", axis="xy") +
+  theme(legend.position = "none") +
+   labs(
+    title="Number of species in Animal Crossing",
+    subtitle="Only top 5 species are shown \nDarker colors represent fewer observations",
+    caption="Source: VillagerDB"
+  ) 
+
+pT<- ggtree(phyloT, layout="circular") + 
+  geom_tiplab(aes(image=paste0("images/", label)), 
+                geom="image")
+
+hm + pT
+
+```
