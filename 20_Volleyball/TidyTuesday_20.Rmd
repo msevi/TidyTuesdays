@@ -1,0 +1,179 @@
+---
+title: "Tidy_Tuesday_2020_05_26 "
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Beach volleyball
+
+The objective for this week is to visualize beach volleyball data. Since the given dataset is quite extensive, I will focus the efforts on looking at the trajectory of the best ranked male and female players according to this [wikipedia entry](https://en.wikipedia.org/wiki/FIVB_Beach_Volleyball_World_Rankings){target="_blank"}. Top male players as of 2018 are: Phil Dalhausser & Nick Lucena, and top female players as of 2018 are:  Melissa Humana-Paredes & Sarah Pavan.
+
+The stats include:  
+* tot_aces: point ending serves  
+* tot_attacks: number of attacks (attacking swings over the net)  
+* tot_blocks: point ending blocks  
+* tot_digs: successful defense of an attack  
+* tot_errors: mistakes  
+* tot_hipct: hitting percentage; effectiveness at scoring  
+* tot_kills:number of kills (point ending attacks)  
+* tot_serve_errors: mistakes made on serve  
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(hrbrthemes)
+library(ggtext)
+library(gt)
+library(scales)
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+vb_matches <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-19/vb_matches.csv', guess_max = 76000)
+
+```
+
+## Data Wrangling 
+```{r data_wrangling, message=FALSE}
+filtered_vb_matches<- vb_matches %>%
+  filter(circuit == "FIVB") %>%
+  filter(w_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena") | 
+           w_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena") | 
+           l_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")| 
+           l_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  select(-circuit,
+         -tournament, 
+         -country,
+         -w_p1_age,
+         -w_p2_age,
+         -l_p1_age,
+         -l_p2_age, 
+         -w_rank, 
+         -l_rank
+)
+
+winner_stats<- filtered_vb_matches %>%
+  select(year, date, gender, match_num, starts_with("w_")) %>%
+  filter(w_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena") | 
+           w_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  filter(!is.na(w_p1_tot_attacks))
+
+loser_stats<- filtered_vb_matches %>%
+  select(year, date, gender, match_num, starts_with("l_")) %>%
+  filter(l_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")| 
+           l_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  filter(!is.na(l_p1_tot_attacks))
+
+w_p1<- winner_stats %>%
+  select(-w_p1_hgt, -w_p2_hgt, -match_num, -w_p1_country, -w_p1_birthdate, -w_player2, -starts_with("w_p2_")) %>%
+  pivot_longer(cols = starts_with("w_p1_"),
+               names_to = "stat_type", 
+               values_to = "stat",
+               values_drop_na = TRUE, 
+               names_ptypes = list(val = 'character'),
+               values_ptypes = list(val = 'character')) %>%
+  filter(w_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  rename(player= "w_player1") %>%
+  mutate(outcome="win")
+
+
+w_p2<- winner_stats %>%
+  select(-w_p1_hgt, -w_p2_hgt, -match_num, -w_p2_country, -w_p2_birthdate, -w_player1, -starts_with("w_p1_")) %>%
+  pivot_longer(cols = starts_with("w_p2_"),
+               names_to = "stat_type", 
+               values_to = "stat",
+               values_drop_na = TRUE, 
+               names_ptypes = list(val = 'character'),
+               values_ptypes = list(val = 'character')) %>%
+  filter(w_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  rename(player= "w_player2") %>%
+  mutate(outcome="win")
+
+
+l_p1<- loser_stats %>%
+  select(-l_p1_hgt, -l_p2_hgt, -match_num, -l_p1_country, -l_p1_birthdate, -l_player2, -starts_with("l_p2_")) %>%
+  pivot_longer(cols = starts_with("l_p1_"),
+               names_to = "stat_type", 
+               values_to = "stat",
+               values_drop_na = TRUE, 
+               names_ptypes = list(val = 'character'),
+               values_ptypes = list(val = 'character')) %>%
+  filter(l_player1 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  rename(player= "l_player1") %>%
+  mutate(outcome="loose")
+
+
+l_p2<- loser_stats %>%
+  select(-l_p1_hgt, -l_p2_hgt, -match_num, -l_p2_country, -l_p2_birthdate, -l_player1, -starts_with("l_p1_")) %>%
+  pivot_longer(cols = starts_with("l_p2_"),
+               names_to = "stat_type", 
+               values_to = "stat",
+               values_drop_na = TRUE, 
+               names_ptypes = list(val = 'character'),
+               values_ptypes = list(val = 'character')) %>%
+  filter(l_player2 %in% c("Melissa Humana-Paredes", "Sarah Pavan", "Phil Dalhausser",  "Nick Lucena")) %>%
+  rename(player= "l_player2") %>%
+  mutate(outcome="loose")
+
+
+all_stats<- bind_rows(w_p1, w_p2, l_p1, l_p2) %>%
+  mutate(stat_type= str_remove(stat_type, "w_p1_")) %>%
+  mutate(stat_type= str_remove(stat_type, "w_p2_")) %>%
+  mutate(stat_type= str_remove(stat_type, "l_p1_")) %>%
+  mutate(stat_type= str_remove(stat_type, "l_p2_")) %>%
+  mutate(year= as.integer(year))
+
+
+mean_stat<- all_stats %>%
+  group_by(year, player, stat_type, gender) %>%
+  summarise(mean_stat=mean(stat))
+  
+
+```
+
+
+## Visualizations
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+all_stats %>%
+  select(date, player, outcome) %>%
+  group_by(player, outcome) %>%
+  summarise(counts= n()) %>%
+  left_join(filtered_vb_matches[,c("w_player1", "w_p1_birthdate")], by= c("player" = "w_player1")) %>%
+  distinct() %>%
+  left_join(filtered_vb_matches[,c("w_player2", "w_p2_birthdate")], by= c("player" = "w_player2")) %>%
+  distinct() %>%
+  mutate(w_p1_birthdate= ifelse(is.na(w_p1_birthdate), w_p2_birthdate, w_p1_birthdate)) %>%
+  mutate(w_p1_birthdate= lubridate::as_date(w_p1_birthdate)) %>%
+  select(-w_p2_birthdate) %>%
+  rename(birthdate="w_p1_birthdate") %>%
+  gt()
+  
+
+```
+
+Chose to visualize male players, since they have a loger trajectory.
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+ggplot() +
+  geom_point(data = all_stats %>% filter(gender=="M"), aes(x=year, y=stat, color=player, shape=outcome)) +
+  geom_line(data = mean_stat %>% filter(gender=="M"), aes(x=year, y=mean_stat, color=player)) +
+  facet_grid(stat_type~player, scales = "free_y") +  
+  labs(
+    title="Stats for highest ranked male beach volleyball players as of 2018",
+    subtitle="Available data from the FIVB circuit",
+    caption="Triangles represent match was won.\nSource: Adam Vagnar"
+  ) +
+  theme_ipsum_tw(grid="XY", axis="xy") +
+  theme(legend.position="none",
+        axis.text.x = element_text(angle = 90)) +
+theme(plot.title.position = "plot",
+    plot.title = element_textbox_simple()) +
+  scale_x_continuous(breaks = breaks_pretty())
+
+```
+
