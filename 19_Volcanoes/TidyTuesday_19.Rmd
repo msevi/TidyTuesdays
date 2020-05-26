@@ -1,0 +1,88 @@
+---
+title: "Tidy_Tuesday_2020_05_19"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Tidy Tuesday: Volcanoes
+
+This week's objective was to visualize [volvano data](https://cran.r-project.org/web/packages/ggvoronoi/vignettes/ggvoronoi.html){target="_blank"}.
+
+## Load libraries
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(ggtext)
+library(hrbrthemes)
+library(patchwork)
+library(gt)
+library(paletteer)
+```
+
+## Get Data
+```{r get_data, warning=FALSE, message=FALSE}
+volcano <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/volcano.csv')
+eruptions <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/eruptions.csv')
+events <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/events.csv')
+tree_rings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/tree_rings.csv')
+sulfur <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-12/sulfur.csv')
+
+```
+
+## Data Wrangling 
+```{r data_wrangling, message=FALSE}
+
+eruptions_df<- eruptions %>%
+  filter(eruption_category=="Confirmed Eruption") %>%
+  filter(start_year>= 1900) %>%
+  left_join(volcano) %>%
+  group_by(volcano_name, longitude, latitude, start_year, population_within_5_km) %>%
+  tally() %>%
+  mutate(last_century= ifelse(start_year>=1920, "YES", "NO")) %>%
+  mutate(g1M= ifelse(population_within_5_km>=1000000, "YES", "NO")) %>%
+  filter(!is.na(g1M))
+
+world <- map_data("world")
+
+levels(as.factor(eruptions_df$population_within_5_km))
+
+check_palettes<- palettes_d_names
+
+```
+
+
+## Visualizations
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+ggplot() +
+  geom_map(
+    data = world, 
+    map = world,
+    aes(x=long, y=lat, map_id = region),
+    color = "white", 
+    fill = "gray50", 
+    size = 0.05, 
+    alpha = 0.2
+  ) +
+  geom_point(
+    data = eruptions_df,
+    aes(longitude, latitude, color= g1M, shape= g1M),
+    alpha = 0.8
+  ) +
+  labs(x = NULL, y = NULL) +
+  labs(title = "Confirmed Eruptions since 1900", 
+       caption = "Populations greater than 1M within 5km of volcano are shown in triangles" ) +
+  hrbrthemes::theme_ipsum(axis = FALSE,
+                          axis_title_just = "l",
+                          grid = FALSE, 
+                          axis_text_size = 0) +
+  theme(axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        legend.position = "none") +
+  paletteer::scale_color_paletteer_d(palette = "dichromat::BluetoDarkOrange.12") 
+
+```
+
