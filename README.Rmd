@@ -35,13 +35,19 @@ So far I have looked at data about:
 11. Brain injuries  
 12. Beer  
 13. Tour de France
+14. Rap artists
+15. GDPR fines
+16. Broadway
+17. Animal Crossing
+18. Volcanos
+19. Volleyball
 
 
-13 out of 14, what a streak!
+19 out of 20, what a streak!
 
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
-gauge(13, min = 0, max = 48, gaugeSectors(
+gauge(19, min = 0, max = 48, gaugeSectors(
   success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
 ), label = 'Projects')
 ```

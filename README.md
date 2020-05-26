@@ -33,7 +33,13 @@ So far I have looked at data about:
 11. Brain injuries
 12. Beer
 13. Tour de France
+14. Rap artists
+15. GDPR fines
+16. Broadway
+17. Animal Crossing
+18. Volcanos
+19. Volleyball
 
-13 out of 14, what a streak!
+19 out of 20, what a streak!
 
 ![](README_files/figure-markdown_github/unnamed-chunk-1-1.png)
