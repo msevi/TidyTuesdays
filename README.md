@@ -1,10 +1,16 @@
 TidyTuesday
 ================
 
+Who are we?
+===========
+
 Some [Pinto lab](https://www.pintolab.com/) members, under [Chris
 Anderson](https://github.com/chrisLanderson) lead, meet every Tuesday to
 discuss visualization and analyses of
 [TidyTuesday](https://github.com/rfordatascience/tidytuesday) data.
+
+Objectives
+==========
 
 As a group exercise the objectives are:
 
@@ -20,13 +26,19 @@ there will be an md file. If you’d like to have a human readable
 document click on this file, else you can download the Rmarkdown also
 within the folders and run the commands in your local computer.
 
-Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week. The
+Disclaimer
+==========
+
+Time spent on TidyTuesdays is limited to 3-5 hrs a week. The
 analyses/visualizations might not be the most sophisticated, but a lot
 of learning is happening! :)
 
-Please exercise caution and your own judgement if using any of the info
+Please exercise caution and your own judgment if using any of the info
 herein. Also note, that some of the renderings are not faithfully
 reproduced when exported to a markdown file.
+
+Completed
+=========
 
 So far I have looked at data about:
 
