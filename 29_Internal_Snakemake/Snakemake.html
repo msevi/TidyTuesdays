@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="" xml:lang="">
+  <head>
+    <title>TidyTuesdays</title>
+    <meta charset="utf-8" />
+    <meta name="author" content="Maria Sevillano" />
+    <meta name="date" content="2020-07-28" />
+    <link href="Snakemake_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="Snakemake_files/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script type="application/json" id="xaringanExtra-editable-docid">{"id":"x2b09da30f7c4b2180e36abcab982ac1","expires":1}</script>
+    <script src="Snakemake_files/himalaya-1.1.0/himalaya.js"></script>
+    <script src="Snakemake_files/js-cookie-3.0.0/js.cookie.js"></script>
+    <link href="Snakemake_files/editable-0.0.17/editable.css" rel="stylesheet" />
+    <script src="Snakemake_files/editable-0.0.17/editable.js"></script>
+    <script src="Snakemake_files/htmlwidgets-1.5.1.9000/htmlwidgets.js"></script>
+    <script src="Snakemake_files/viz-1.8.2/viz.js"></script>
+    <link href="Snakemake_files/DiagrammeR-styles-0.2/styles.css" rel="stylesheet" />
+    <script src="Snakemake_files/grViz-binding-1.0.5/grViz.js"></script>
+  </head>
+  <body>
+    <textarea id="source">
+class: center, middle, inverse, title-slide
+
+# TidyTuesdays
+## Tools for reproducible research
+### Maria Sevillano
+### Northeastern University
+### 2020-07-28
+
+---
+
+
+# The aim: [Reproducible research](https://nbisweden.github.io/RaukR-2019/rr/presentation/rr_presentation.html#1)
+
+--
+- The ultimate objective for our research is to generate and disseminate *usable* knowledge.   
+
+--
+
+- In this iterative process, ideally, we would like our projects to have one or more of the following characteristics:  
+--
+
+
+.pull-left[
+.can-edit[
+- thing one
+- thing two
+]
+]
+---
+
+# The aim: [Reproducible research](https://nbisweden.github.io/RaukR-2019/rr/presentation/rr_presentation.html#1)
+
+
+- The ultimate objective for our research is to generate and disseminate *usable* knowledge.   
+
+
+- In this iterative process, ideally, we would like our projects to have one or more of the following characteristics:  
+
+.pull-right[
+- Ability to rerun **workflows**  
+- Incorporate feedback and make changes [Additional data/New data]  
+- Return to a project  
+- Hand off projects  
+- Collaborate with others 
+]
+
+---
+# Workflow
+
+--
+- Put simply, a workflow allows us to perform **predictable** and **repetitive** tasks.  
+
+--
+
+- It consists of  multiple steps that take raw data or previous outputs as input, execute a set of instructions and outputs something.
+
+--
+
+- Generally, we want to:   
+  - Manage data (wrangle, input)  
+  - Do an analysis  
+  - Make tables and plots  
+  - Integrate the tables and graphs into a manuscript
+  
+---
+
+# The means: workflow managers
+
+There are several tools to do this:  
+- Snakemake  
+
+- Nexflow  
+
+- Drake
+
+---
+
+# The means: workflow managers
+
+There are several tools to do this:  
+- **Snakemake**  
+
+- Nexflow  
+
+- Drake
+
+---
+
+# Snakemake
+
+- [Snakemake](https://snakemake.readthedocs.io/en/stable/index.html) is "a tool to create reproducible and scalable data analyses". It allows for **automation** of commands in a single script and **scalability** for reproducible data analyses handling *parallelization* all while being *portable*.  
+
+- It was created by [Koesters et al](https://academic.oup.com/bioinformatics/article/28/19/2520/290322) in 2012.  
+
+- The three essential elements of a SNAKEMAKE workflow are:  
+
+(1) Inputs: user defined/provided or outputs  
+(2) Rules/steps/jobs: workflow definitions that use inputs and return outputs  
+(3) Output: target that does not exist
+
+&lt;img src="images/rules.png" width="50%" align="left" /&gt;
+
+&lt;img src="images/SNAKEMAKE_logo.png" width="30%" align="right" /&gt;
+
+---
+
+# Three phases of workflow execution
+
+.pull-left[
+<div id="htmlwidget-8b51aa936cc331d9820c" style="width:504px;height:504px;" class="grViz html-widget"></div>
+<script type="application/json" data-for="htmlwidget-8b51aa936cc331d9820c">{"x":{"diagram":"digraph {\n\ngraph [layout = \"neato\",\n       outputorder = \"edgesfirst\",\n       bgcolor = \"white\"]\n\nnode [fontname = \"Helvetica\",\n      fontsize = \"10\",\n      shape = \"circle\",\n      fixedsize = \"true\",\n      width = \"0.5\",\n      style = \"filled\",\n      fillcolor = \"aliceblue\",\n      color = \"gray70\",\n      fontcolor = \"gray50\"]\n\nedge [fontname = \"Helvetica\",\n     fontsize = \"8\",\n     len = \"1.5\",\n     color = \"gray80\",\n     arrowsize = \"0.5\"]\n\n  \"1\" [label = \"Parsing\", shape = \"rectangle\", fixedsize = \"FALSE\", fillcolor = \"#F0F8FF\", fontcolor = \"#000000\", pos = \"0,3!\"] \n  \"2\" [label = \"DAG built\", shape = \"rectangle\", fixedsize = \"FALSE\", fillcolor = \"#F0F8FF\", fontcolor = \"#000000\", pos = \"0,2!\"] \n  \"3\" [label = \"Execution of DAG\", shape = \"rectangle\", fixedsize = \"FALSE\", fillcolor = \"#F0F8FF\", fontcolor = \"#000000\", pos = \"0,1!\"] \n  \"1\"->\"2\" \n  \"2\"->\"3\" \n}","config":{"engine":"dot","options":null}},"evals":[],"jsHooks":[]}</script>
+]
+
+.pull-right[
+- DAG is a directed acyclic graph (DAG) of jobs where the edges represent dependencies.  
+
+- Take a look at this useful [example workflow](https://snakemake.readthedocs.io/en/stable/tutorial/basics.html) and [these](https://slides.com/johanneskoester/snakemake-tutorial#/) complimentary slides. ] 
+
+---
+
+# How does it work?
+
+.pull-left[
+Today: Minimal example  
+
+Read Mapping
+
+&lt;img src="images/dag.svg" width="100%" align="left" /&gt;  
+]
+--
+
+.pull-right[
+Another day: Complete  
+
+Read mapping
+
+&lt;img src="images/dag_index.png" width="90%" align="center" /&gt;
+]
+--
+
+
+```r
+snakemake --dag --cores all --use-conda mapped/{A,B,C}.bam | dot -Tsvg &gt; dag.svg
+```
+    </textarea>
+<style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
+<script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
+<script>var slideshow = remark.create();
+if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
+  window.dispatchEvent(new Event('resize'));
+});
+(function(d) {
+  var s = d.createElement("style"), r = d.querySelector(".remark-slide-scaler");
+  if (!r) return;
+  s.type = "text/css"; s.innerHTML = "@page {size: " + r.style.width + " " + r.style.height +"; }";
+  d.head.appendChild(s);
+})(document);
+
+(function(d) {
+  var el = d.getElementsByClassName("remark-slides-area");
+  if (!el) return;
+  var slide, slides = slideshow.getSlides(), els = el[0].children;
+  for (var i = 1; i < slides.length; i++) {
+    slide = slides[i];
+    if (slide.properties.continued === "true" || slide.properties.count === "false") {
+      els[i - 1].className += ' has-continuation';
+    }
+  }
+  var s = d.createElement("style");
+  s.type = "text/css"; s.innerHTML = "@media print { .has-continuation { display: none; } }";
+  d.head.appendChild(s);
+})(document);
+// delete the temporary CSS (for displaying all slides initially) when the user
+// starts to view slides
+(function() {
+  var deleted = false;
+  slideshow.on('beforeShowSlide', function(slide) {
+    if (deleted) return;
+    var sheets = document.styleSheets, node;
+    for (var i = 0; i < sheets.length; i++) {
+      node = sheets[i].ownerNode;
+      if (node.dataset["target"] !== "print-only") continue;
+      node.parentNode.removeChild(node);
+    }
+    deleted = true;
+  });
+})();
+(function() {
+  "use strict"
+  // Replace <script> tags in slides area to make them executable
+  var scripts = document.querySelectorAll(
+    '.remark-slides-area .remark-slide-container script'
+  );
+  if (!scripts.length) return;
+  for (var i = 0; i < scripts.length; i++) {
+    var s = document.createElement('script');
+    var code = document.createTextNode(scripts[i].textContent);
+    s.appendChild(code);
+    var scriptAttrs = scripts[i].attributes;
+    for (var j = 0; j < scriptAttrs.length; j++) {
+      s.setAttribute(scriptAttrs[j].name, scriptAttrs[j].value);
+    }
+    scripts[i].parentElement.replaceChild(s, scripts[i]);
+  }
+})();
+(function() {
+  var links = document.getElementsByTagName('a');
+  for (var i = 0; i < links.length; i++) {
+    if (/^(https?:)?\/\//.test(links[i].getAttribute('href'))) {
+      links[i].target = '_blank';
+    }
+  }
+})();</script>
+
+<script>
+slideshow._releaseMath = function(el) {
+  var i, text, code, codes = el.getElementsByTagName('code');
+  for (i = 0; i < codes.length;) {
+    code = codes[i];
+    if (code.parentNode.tagName !== 'PRE' && code.childElementCount === 0) {
+      text = code.textContent;
+      if (/^\\\((.|\s)+\\\)$/.test(text) || /^\\\[(.|\s)+\\\]$/.test(text) ||
+          /^\$\$(.|\s)+\$\$$/.test(text) ||
+          /^\\begin\{([^}]+)\}(.|\s)+\\end\{[^}]+\}$/.test(text)) {
+        code.outerHTML = code.innerHTML;  // remove <code></code>
+        continue;
+      }
+    }
+    i++;
+  }
+};
+slideshow._releaseMath(document);
+</script>
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+(function () {
+  var script = document.createElement('script');
+  script.type = 'text/javascript';
+  script.src  = 'https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML';
+  if (location.protocol !== 'file:' && /^https?:/.test(script.src))
+    script.src  = script.src.replace(/^https?:/, '');
+  document.getElementsByTagName('head')[0].appendChild(script);
+})();
+</script>
+  </body>
+</html>
