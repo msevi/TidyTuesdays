@@ -4,7 +4,7 @@ Tidy\_Tuesday\_2020\_05\_19
 Tidy Tuesday: Volcanoes
 =======================
 
-This week's objective was to visualize <a href="https://cran.r-project.org/web/packages/ggvoronoi/vignettes/ggvoronoi.html" target="_blank">volvano data</a>.
+This week's objective was to visualize <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-12/readme.md" target="_blank">volvano data</a>.
 
 Load libraries
 --------------

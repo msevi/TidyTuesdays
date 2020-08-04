@@ -9,7 +9,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Tidy Tuesday: Beach volleyball
 
-The objective for this week is to visualize beach volleyball data. Since the given dataset is quite extensive, I will focus the efforts on looking at the trajectory of the best ranked male and female players according to this [wikipedia entry](https://en.wikipedia.org/wiki/FIVB_Beach_Volleyball_World_Rankings){target="_blank"}. Top male players as of 2018 are: Phil Dalhausser & Nick Lucena, and top female players as of 2018 are:  Melissa Humana-Paredes & Sarah Pavan.
+The objective for this week is to visualize beach [volleyball data](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-19/readme.md){target="_blank"}. Since the given dataset is quite extensive, I will focus the efforts on looking at the trajectory of the best ranked male and female players according to this [wikipedia entry](https://en.wikipedia.org/wiki/FIVB_Beach_Volleyball_World_Rankings){target="_blank"}. Top male players as of 2018 are: Phil Dalhausser & Nick Lucena, and top female players as of 2018 are:  Melissa Humana-Paredes & Sarah Pavan.
 
 The stats include:  
 * tot_aces: point ending serves  
@@ -28,6 +28,7 @@ library(hrbrthemes)
 library(ggtext)
 library(gt)
 library(scales)
+library(paletteer)
 ```
 
 ## Get Data
@@ -131,6 +132,7 @@ mean_stat<- all_stats %>%
   group_by(year, player, stat_type, gender) %>%
   summarise(mean_stat=mean(stat))
   
+check_palettes<- palettes_d_names
 
 ```
 
@@ -158,7 +160,7 @@ all_stats %>%
 
 Chose to visualize male players, since they have a loger trajectory.
 
-```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+```{r fig.width= 10, fig.height=15, warning=FALSE, message=FALSE}
 ggplot() +
   geom_point(data = all_stats %>% filter(gender=="M"), aes(x=year, y=stat, color=player, shape=outcome)) +
   geom_line(data = mean_stat %>% filter(gender=="M"), aes(x=year, y=mean_stat, color=player)) +
@@ -173,7 +175,8 @@ ggplot() +
         axis.text.x = element_text(angle = 90)) +
 theme(plot.title.position = "plot",
     plot.title = element_textbox_simple()) +
-  scale_x_continuous(breaks = breaks_pretty())
+  scale_x_continuous(breaks = breaks_pretty()) +
+  paletteer::scale_color_paletteer_d(palette = "ggsci::alternating_igv") 
 
 ```
 
