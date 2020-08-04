@@ -63,7 +63,7 @@ So far I have looked at data about:
 19. Volcanos
 20. Volleyball  
 21. Cocktails  
-22. Marbles  
+22. ~~Marbles~~  
 23. African-american achievement  
 24. Slavery  
 25. ~~Caribou~~  
@@ -73,6 +73,6 @@ So far I have looked at data about:
 29. ~~Australian animals~~ / Internal: Reproducible research  
 30. Palmer Penguins
 
-27 out of 30, what a streak!
+26 out of 30, what a streak!
 
 ![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
