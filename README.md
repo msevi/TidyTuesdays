@@ -1,45 +1,66 @@
 TidyTuesday
 ================
 
-Some [Pinto lab](https://www.pintolab.com/) members, under [Chris Anderson](https://github.com/chrisLanderson) lead, meet every Tuesday to discuss visualization and analyses of [TidyTuesday](https://github.com/rfordatascience/tidytuesday) data.
+Some [Pinto lab](https://www.pintolab.com/) members, under [Chris
+Anderson](https://github.com/chrisLanderson) lead, meet every Tuesday to
+discuss visualization and analyses of
+[TidyTuesday](https://github.com/rfordatascience/tidytuesday) data.
 
 As a group exercise the objectives are:
 
 -   gain proficiency with R:
     -   learn about new packages
     -   improve code readability
-    -   improve visualization techniques
--   learn from each other
+    -   improve visualization techniques  
+-   learn from each other  
 -   do (some) research outside our own and have fun!
 
-In this repo I will be documenting *my* contribution. In most folders, there will be an md file. If you'd like to have a human readable document click on this file, else you can download the Rmarkdown also within the folders and run the commands in your local computer.
+In this repo I will be documenting *my* contribution. In most folders,
+there will be an md file. If you’d like to have a human readable
+document click on this file, else you can download the Rmarkdown also
+within the folders and run the commands in your local computer.
 
-Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week. The analyses/visualizations might not be the most sophisticated, but a lot of learning is happening! :)
+Disclaimer: Time spent on TidyTuesdays is limited to 3-5 hrs a week. The
+analyses/visualizations might not be the most sophisticated, but a lot
+of learning is happening! :)
 
-Please exercise caution and your own judgement if using any of the info herein. Also note, that some of the renderings are not faithfully reproduced when exported to a markdown file.
+Please exercise caution and your own judgement if using any of the info
+herein. Also note, that some of the renderings are not faithfully
+reproduced when exported to a markdown file.
 
 So far I have looked at data about:
 
-1.  Australian fires
-2.  Passwords
-3.  Spotify
-4.  San Francisco trees
-5.  NFL attendance
-6.  Hotels
-7.  Measles
-8.  NHL
-9.  College tuition
-10. The Office
-11. Brain injuries
-12. Beer
-13. Tour de France
-14. Rap artists
-15. GDPR fines
-16. Broadway
-17. Animal Crossing
-18. Volcanos
-19. Volleyball
+1.  Australian fires  
+2.  Passwords  
+3.  Spotify  
+4.  San Francisco trees  
+5.  NFL attendance  
+6.  Hotels  
+7.  ~~Food’s carbon print~~  
+8.  Measles  
+9.  NHL  
+10. College tuition  
+11. The Office  
+12. Brain injuries  
+13. Beer  
+14. Tour de France
+15. Rap artists
+16. GDPR fines
+17. Broadway
+18. Animal Crossing
+19. Volcanos
+20. Volleyball  
+21. Cocktails  
+22. Marbles  
+23. African-american achievement  
+24. Slavery  
+25. ~~Caribou~~  
+26. X-men  
+27. Coffee  
+28. Astronauts  
+29. ~~Australian animals~~ / Internal: Reproducible research  
+30. Palmer Penguins
 
-19 out of 20, what a streak!
+27 out of 30, what a streak!
 
-![](README_files/figure-markdown_github/unnamed-chunk-1-1.png)
+![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
