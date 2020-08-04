@@ -1,0 +1,131 @@
+---
+title: "TidyTuesday_2020_08_03"
+output: 
+  html_document: 
+    css: style.css
+    keep_md: yes
+    toc: yes
+    toc_float: yes
+    theme: simplex
+    highlight: zenburn
+    includes:
+      before_body: header.html
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+# Tidy Tuesday: Penguins
+
+The objectives for this week are manyfold. 
+First, last week we talked about `yaml` files briefly, but I've never manipulated this metadata intentionally in the past. Second, after watching [this](https://rstudio.com/resources/rstudioconf-2020/of-teacups-giraffes-r-markdown/){target="_blank"} talk by [Desirée De Leon](https://desiree.rbind.io/){target="_blank"} I wanted to attempt some of the principles that were used to create [**Teacups, giraffes and statistics**](https://tinystats.github.io/teacups-giraffes-and-statistics/){target="_blank"}:
+
+1. good characters  
+2. good play  
+3. good design  
+
+Third, I wanted to further explore the TidyTuesday dataset on [Penguins](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-07-28/readme.md){target="_blank"} using the `GGally` package.   
+
+<br>
+**Let's get started!**
+
+
+- We got the **good characters** art down since it is provided by [Dr. Allison Horst](https://twitter.com/allison_horst), along with data collected and made available by [Dr. Kristen Gorman](https://www.uaf.edu/cfos/people/faculty/detail/kristen-gorman.php){target="_blank"}, and a nice package that was developed with [Dr. Allison Hill](https://alison.rbind.io/){target="_blank"}: `palmerpenguins`, think of iris, but with penguins.
+
+- For the **good play** I will incorporate an interactive component to this Rmarkdown. Aside from using `plotly` for visualization, we could use the package `learnr` which present data/information in a format that has optimal tutorial elements (e.g. equations, videos, code exercise, quizzes, shiny components).
+
+- In the **good design** criteria I've incorporated *div tips* to make the document stand out a bit. Here's a [link](https://desiree.rbind.io/post/2019/making-tip-boxes-with-bookdown-and-rmarkdown/){target="_blank"} on how to make them.  
+
+<div class="note">
+There are a few options incorporated into the YAML configuration.The header used was imported from an HTML file targeting a local image file of Iter penguins. 
+<br> Available highlighting styles for code chunks can be listed with the following line in the terminal: `pandoc --list-highlight-styles`. For this file, I used `zenburn`. File themes can also be updated from the default using pre-packaged themes, or we can download R packages with additional themes, check out this [blogpost](https://www.datadreaming.org/post/r-markdown-theme-gallery/){target="_blank"}, in this document I used `simplex` theme.
+<br>For all the div tips used here, I incorporated the colors from the Iter penguins artwork using color slurp and the Google font Indie Flower was imported to the CSS style file. The images within div tips are courtesy of Desirée De Leon.</b>
+</div>
+
+## Load libraries
+  
+<div class="fyi">
+We will use `plotly` for interactive plots, `GGally` for scatterplot matrix correlograms.
+</div>
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+suppressPackageStartupMessages(library(tidyverse))
+library(plotly)
+library(skimr)
+library(GGally)
+```
+
+## Get Data
+
+```{r get_data, warning=FALSE, message=FALSE}
+penguins<- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-28/penguins.csv')
+```
+
+## Inspect Data
+
+```{r inspect_data, warning=FALSE, message=FALSE}
+skim(penguins)
+```
+
+<img src="images/culmen_depth.png" alt="bill" style="width:400px;height:300px;">
+
+## Data Wrangling 
+
+<div class="puzzle">
+The downloaded data is pretty clean, besides filtering missing data from the sex variable, I just tallied observations.
+</div>
+
+
+```{r data_wrangling, message=FALSE}
+penguins_df<- penguins %>%
+  drop_na() %>%
+  mutate(year=as.factor(year))
+```
+
+## Visualization
+
+```{r correlogram, message=FALSE, fig.height= 14 , fig.width= 14}
+ggpairs(penguins_df)
+```
+
+## Interactive
+
+<div class="demo">
+Click on legend label to remove observations from plots!
+</div>
+
+```{r interactive, message=FALSE, fig.height= 14 , fig.width= 14}
+p<- ggplot(penguins_df, aes(flipper_length_mm, bill_length_mm, fill= species, color=species)) +
+  geom_point() +
+  geom_smooth(method='lm', formula= y~x) +
+  hrbrthemes::theme_ipsum() +
+  scale_fill_manual(values = c("#FF8000", "#C85BCA", "#0E7274")) +
+  scale_color_manual(values = c("#FF8000", "#C85BCA", "#0E7274"))
+
+ggplotly(p, height = 800, width = 800)
+```
+
+```{r interactive2, message=FALSE, fig.height= 14 , fig.width= 14}
+p2<- ggplot(penguins_df, aes(body_mass_g, island, color=species)) +
+  geom_point() +
+  facet_grid(~sex)+
+  hrbrthemes::theme_ipsum() +
+  scale_color_manual(values = c("#FF8000", "#C85BCA", "#0E7274"))
+
+ggplotly(p2, height = 800, width = 800)
+```
+
+## Resources
+
+Here's some cool links!  
+
+On `learnr`:  
+https://desiree.rbind.io/post/2020/learnr-iframes/  
+https://bookdown.org/yihui/rmarkdown/learnr.html  
+https://rstudio4edu.github.io/rstudio4edu-book/learnr.html  
+
+On github:  
+https://htmlpreview.github.io/  

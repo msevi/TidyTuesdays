@@ -1,0 +1,153 @@
+---
+title: "TidyTuesday_2020_07_14"
+output: github_document
+---
+# Tidy Tuesday: Coffee
+Examine the distribution of scores by characteristics that are used to grade good quality coffee.
+What does it take to get the best cup in 2017? 
+
+
+## Load libraries
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(skimr)
+library(ggradar)
+suppressPackageStartupMessages(library(tidyverse))
+library(scales)
+library(stringr)
+library(hrbrthemes)
+library(paletteer)
+library(ggridges)
+library(ggtext)
+```
+
+## Get Data
+
+```{r get_data, warning=FALSE, message=FALSE}
+coffee_ratings <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-07-07/coffee_ratings.csv')
+```
+
+## Inspect Data
+
+```{r inspect_data, warning=FALSE, message=FALSE}
+skim(coffee_ratings)
+```
+
+## Data Wrangling 
+
+```{r data_wrangling, message=FALSE}
+
+#wrangle
+coffee_df<- coffee_ratings %>% 
+  select(which(sapply(.,class)=="numeric"), country_of_origin, farm_name, harvest_year, grading_date) %>%
+  select(-quakers, -number_of_bags, -starts_with("category"), -starts_with("altitude"))  %>%
+  mutate(grading_year= word(grading_date,-1)) %>%
+  filter(!grepl("/" , harvest_year)) %>%
+  filter(!grepl("-" , harvest_year)) %>%
+  filter(!grepl("January|March |Mayo|Spring |August |TEST| mmm |Fall| July"  , harvest_year)) %>%
+  filter(!is.na(farm_name)) %>%
+  filter(!is.na(harvest_year))  %>%
+  mutate(harvest_year = as.numeric(harvest_year)) 
+
+##violin plot for distribution
+coffee_df_violin<- coffee_df %>%
+  select(-total_cup_points, -moisture, -grading_date, -grading_year, -harvest_year) %>%
+  pivot_longer(aroma:cupper_points, names_to = "quality", values_to = "score") 
+
+#35 countries; top 5, bottom 5
+coffee_df_violin_country<- coffee_df %>%
+  select(country_of_origin, total_cup_points) %>%
+  group_by(country_of_origin) %>%
+  top_n(1, total_cup_points) %>%
+  select(country_of_origin) %>%
+  distinct() %>%
+  pull(country_of_origin)
+
+coffee_df_violin_2<- coffee_df_violin %>%
+                filter(country_of_origin %in% c(coffee_df_violin_country[1:5],coffee_df_violin_country[(length(coffee_df_violin_country)-4):length(coffee_df_violin_country)])) %>%
+  mutate(grade= ifelse(country_of_origin %in% coffee_df_violin_country[1:5], "top", "bottom")) %>%
+  mutate(country_of_origin= fct_relevel(country_of_origin, c(coffee_df_violin_country[1:5], coffee_df_violin_country[(length(coffee_df_violin_country)-4):length(coffee_df_violin_country)])))
+
+##radar plot
+coffee_df_radar<- coffee_df %>%
+  filter(harvest_year==2017) %>%
+  top_n(11, total_cup_points) %>%
+  group_by(farm_name) %>%
+  top_n(1, total_cup_points) %>%
+  ungroup() %>%
+  select(farm_name, aroma, flavor, aftertaste, acidity, body, balance, uniformity, sweetness) 
+
+coffee_df_radar_table<- coffee_df %>%
+  filter(farm_name %in% coffee_df_radar$farm_name) %>%
+  filter(harvest_year==2017) %>% 
+  select(farm_name, country_of_origin, total_cup_points) %>%
+  group_by(farm_name) %>%
+  top_n(1, total_cup_points) %>%
+  rename(Farm = "farm_name", Country = "country_of_origin", "Total points" = "total_cup_points")
+
+coffee_df_radar <- coffee_df_radar %>%
+  mutate(farm_name= fct_relevel(farm_name, coffee_df_radar_table$Farm)) %>% 
+  rename(group= "farm_name") %>% 
+  mutate_each(funs(rescale), -group) 
+  
+
+```
+
+## Visualizations
+
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+##violin plot for distribution
+ggplot() +
+  geom_violin(data= coffee_df_violin, aes(quality, score)) +
+  geom_jitter(data= coffee_df_violin_2 ,
+              aes(quality, score, color= country_of_origin, shape=grade), alpha=0.8) +
+  hrbrthemes::theme_ipsum() +
+  scale_color_paletteer_d("ggsci::nrc_npg") +
+  ggtitle("Distribution of coffee grading qualities", subtitle = "Highest graded: ▲, lowest graded: ○") +
+  theme(legend.position = "bottom") +
+  labs(color = "Country") +
+  guides(shape = FALSE)
+         
+##radar plot
+coffee_df_radar %>%
+  ggradar(font.radar = "Arial Narrow",
+          values.radar = c("0", "5", "10"), 
+          axis.line.colour = "black",
+          gridline.max.colour = "black") +
+  hrbrthemes::theme_ipsum() +
+  theme(axis.text.x = element_blank()) +
+  theme(axis.text.y = element_blank()) +
+  ggtitle("Scoring of top 10 best rated coffee in 2017") +
+  scale_color_paletteer_d("ggsci::nrc_npg") +
+  theme(panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+        
+
+##radar plot table
+kableExtra::kable(coffee_df_radar_table)
+
+#ggridges best and worst
+ggplot(coffee_df %>% 
+         filter(country_of_origin %in% c("Ethiopia", "India")) %>%
+         pivot_longer(aroma:cupper_points, names_to = "quality", values_to = "score") %>%
+         filter(quality %in% c("acidity", "aroma")) %>%
+         mutate(harvest_year=as.character(harvest_year)), 
+       aes(y=harvest_year, x=score, fill= country_of_origin)) + 
+  geom_density_ridges(rel_min_height = 0.01, alpha=0.8) +
+  labs(fill="Country") +
+  hrbrthemes::theme_ipsum() +
+  scale_fill_paletteer_d("ggsci::nrc_npg") +
+  ggtitle("")  +
+  labs(title = "Coffee score evolution of <span style='color:#EB7467;'>**Ethiopia**</span> (best ranked) and <span style='color:#78C9DE;'>**India**</span> (worst ranked)")  +
+  theme(axis.title = element_blank(), 
+        plot.title = element_markdown(),
+        plot.title.position = "plot")
+
+
+
+
+
+ggridges::geom_density_ridges()
+```
