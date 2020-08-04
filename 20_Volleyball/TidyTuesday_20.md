@@ -4,7 +4,7 @@ Tidy\_Tuesday\_2020\_05\_26
 Tidy Tuesday: Beach volleyball
 ==============================
 
-The objective for this week is to visualize beach volleyball data. Since the given dataset is quite extensive, I will focus the efforts on looking at the trajectory of the best ranked male and female players according to this <a href="https://en.wikipedia.org/wiki/FIVB_Beach_Volleyball_World_Rankings" target="_blank">wikipedia entry</a>. Top male players as of 2018 are: Phil Dalhausser & Nick Lucena, and top female players as of 2018 are: Melissa Humana-Paredes & Sarah Pavan.
+The objective for this week is to visualize beach <a href="https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-05-19/readme.md" target="_blank">volleyball data</a>. Since the given dataset is quite extensive, I will focus the efforts on looking at the trajectory of the best ranked male and female players according to this <a href="https://en.wikipedia.org/wiki/FIVB_Beach_Volleyball_World_Rankings" target="_blank">wikipedia entry</a>. Top male players as of 2018 are: Phil Dalhausser & Nick Lucena, and top female players as of 2018 are: Melissa Humana-Paredes & Sarah Pavan.
 
 The stats include:
 \* tot\_aces: point ending serves
@@ -25,6 +25,7 @@ library(hrbrthemes)
 library(ggtext)
 library(gt)
 library(scales)
+library(paletteer)
 ```
 
 Get Data
@@ -130,6 +131,8 @@ all_stats<- bind_rows(w_p1, w_p2, l_p1, l_p2) %>%
 mean_stat<- all_stats %>%
   group_by(year, player, stat_type, gender) %>%
   summarise(mean_stat=mean(stat))
+  
+check_palettes<- palettes_d_names
 ```
 
 Visualizations
@@ -156,7 +159,7 @@ all_stats %>%
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', 'Fira Sans', 'Droid Sans', Arial, sans-serif;
 }
 
-#movlukkmap .gt_table {
+#cqqaflhsbj .gt_table {
   display: table;
   border-collapse: collapse;
   margin-left: auto;
@@ -179,7 +182,7 @@ all_stats %>%
   border-left-color: #D3D3D3;
 }
 
-#movlukkmap .gt_heading {
+#cqqaflhsbj .gt_heading {
   background-color: #FFFFFF;
   text-align: center;
   border-bottom-color: #FFFFFF;
@@ -191,7 +194,7 @@ all_stats %>%
   border-right-color: #D3D3D3;
 }
 
-#movlukkmap .gt_title {
+#cqqaflhsbj .gt_title {
   color: #333333;
   font-size: 125%;
   font-weight: initial;
@@ -201,7 +204,7 @@ all_stats %>%
   border-bottom-width: 0;
 }
 
-#movlukkmap .gt_subtitle {
+#cqqaflhsbj .gt_subtitle {
   color: #333333;
   font-size: 85%;
   font-weight: initial;
@@ -211,13 +214,13 @@ all_stats %>%
   border-top-width: 0;
 }
 
-#movlukkmap .gt_bottom_border {
+#cqqaflhsbj .gt_bottom_border {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
 }
 
-#movlukkmap .gt_col_headings {
+#cqqaflhsbj .gt_col_headings {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -232,7 +235,7 @@ all_stats %>%
   border-right-color: #D3D3D3;
 }
 
-#movlukkmap .gt_col_heading {
+#cqqaflhsbj .gt_col_heading {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -252,7 +255,7 @@ all_stats %>%
   overflow-x: hidden;
 }
 
-#movlukkmap .gt_column_spanner_outer {
+#cqqaflhsbj .gt_column_spanner_outer {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -264,15 +267,15 @@ all_stats %>%
   padding-right: 4px;
 }
 
-#movlukkmap .gt_column_spanner_outer:first-child {
+#cqqaflhsbj .gt_column_spanner_outer:first-child {
   padding-left: 0;
 }
 
-#movlukkmap .gt_column_spanner_outer:last-child {
+#cqqaflhsbj .gt_column_spanner_outer:last-child {
   padding-right: 0;
 }
 
-#movlukkmap .gt_column_spanner {
+#cqqaflhsbj .gt_column_spanner {
   border-bottom-style: solid;
   border-bottom-width: 2px;
   border-bottom-color: #D3D3D3;
@@ -284,7 +287,7 @@ all_stats %>%
   width: 100%;
 }
 
-#movlukkmap .gt_group_heading {
+#cqqaflhsbj .gt_group_heading {
   padding: 8px;
   color: #333333;
   background-color: #FFFFFF;
@@ -306,7 +309,7 @@ all_stats %>%
   vertical-align: middle;
 }
 
-#movlukkmap .gt_empty_group_heading {
+#cqqaflhsbj .gt_empty_group_heading {
   padding: 0.5px;
   color: #333333;
   background-color: #FFFFFF;
@@ -321,19 +324,19 @@ all_stats %>%
   vertical-align: middle;
 }
 
-#movlukkmap .gt_striped {
+#cqqaflhsbj .gt_striped {
   background-color: rgba(128, 128, 128, 0.05);
 }
 
-#movlukkmap .gt_from_md > :first-child {
+#cqqaflhsbj .gt_from_md > :first-child {
   margin-top: 0;
 }
 
-#movlukkmap .gt_from_md > :last-child {
+#cqqaflhsbj .gt_from_md > :last-child {
   margin-bottom: 0;
 }
 
-#movlukkmap .gt_row {
+#cqqaflhsbj .gt_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -352,7 +355,7 @@ all_stats %>%
   overflow-x: hidden;
 }
 
-#movlukkmap .gt_stub {
+#cqqaflhsbj .gt_stub {
   color: #333333;
   background-color: #FFFFFF;
   font-size: 100%;
@@ -364,7 +367,7 @@ all_stats %>%
   padding-left: 12px;
 }
 
-#movlukkmap .gt_summary_row {
+#cqqaflhsbj .gt_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -374,7 +377,7 @@ all_stats %>%
   padding-right: 5px;
 }
 
-#movlukkmap .gt_first_summary_row {
+#cqqaflhsbj .gt_first_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -384,7 +387,7 @@ all_stats %>%
   border-top-color: #D3D3D3;
 }
 
-#movlukkmap .gt_grand_summary_row {
+#cqqaflhsbj .gt_grand_summary_row {
   color: #333333;
   background-color: #FFFFFF;
   text-transform: inherit;
@@ -394,7 +397,7 @@ all_stats %>%
   padding-right: 5px;
 }
 
-#movlukkmap .gt_first_grand_summary_row {
+#cqqaflhsbj .gt_first_grand_summary_row {
   padding-top: 8px;
   padding-bottom: 8px;
   padding-left: 5px;
@@ -404,7 +407,7 @@ all_stats %>%
   border-top-color: #D3D3D3;
 }
 
-#movlukkmap .gt_table_body {
+#cqqaflhsbj .gt_table_body {
   border-top-style: solid;
   border-top-width: 2px;
   border-top-color: #D3D3D3;
@@ -413,7 +416,7 @@ all_stats %>%
   border-bottom-color: #D3D3D3;
 }
 
-#movlukkmap .gt_footnotes {
+#cqqaflhsbj .gt_footnotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -427,13 +430,13 @@ all_stats %>%
   border-right-color: #D3D3D3;
 }
 
-#movlukkmap .gt_footnote {
+#cqqaflhsbj .gt_footnote {
   margin: 0px;
   font-size: 90%;
   padding: 4px;
 }
 
-#movlukkmap .gt_sourcenotes {
+#cqqaflhsbj .gt_sourcenotes {
   color: #333333;
   background-color: #FFFFFF;
   border-bottom-style: none;
@@ -447,41 +450,41 @@ all_stats %>%
   border-right-color: #D3D3D3;
 }
 
-#movlukkmap .gt_sourcenote {
+#cqqaflhsbj .gt_sourcenote {
   font-size: 90%;
   padding: 4px;
 }
 
-#movlukkmap .gt_left {
+#cqqaflhsbj .gt_left {
   text-align: left;
 }
 
-#movlukkmap .gt_center {
+#cqqaflhsbj .gt_center {
   text-align: center;
 }
 
-#movlukkmap .gt_right {
+#cqqaflhsbj .gt_right {
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
 
-#movlukkmap .gt_font_normal {
+#cqqaflhsbj .gt_font_normal {
   font-weight: normal;
 }
 
-#movlukkmap .gt_font_bold {
+#cqqaflhsbj .gt_font_bold {
   font-weight: bold;
 }
 
-#movlukkmap .gt_font_italic {
+#cqqaflhsbj .gt_font_italic {
   font-style: italic;
 }
 
-#movlukkmap .gt_super {
+#cqqaflhsbj .gt_super {
   font-size: 65%;
 }
 
-#movlukkmap .gt_footnote_marks {
+#cqqaflhsbj .gt_footnote_marks {
   font-style: italic;
   font-size: 65%;
 }
@@ -570,7 +573,8 @@ ggplot() +
         axis.text.x = element_text(angle = 90)) +
 theme(plot.title.position = "plot",
     plot.title = element_textbox_simple()) +
-  scale_x_continuous(breaks = breaks_pretty())
+  scale_x_continuous(breaks = breaks_pretty()) +
+  paletteer::scale_color_paletteer_d(palette = "ggsci::alternating_igv") 
 ```
 
 ![](TidyTuesday_20_files/figure-markdown_github/unnamed-chunk-2-1.png)
