@@ -59,10 +59,10 @@ So far I have looked at data about:
 28. Astronauts  
 29. ~~Australian animals~~ / Internal: Reproducible research  
 30. Palmer Penguins  
-31. European Energy
-32. ~~Avatar: The Last Airbender~~ /Internal: Hierarchical data
+31. European Energy  
+32. ~~Avatar: The Last Airbender~~ /Internal: Hierarchical data  
 
-27 out of 32, what a streak!
+**27 out of 32, what a streak!**
 
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
