@@ -77,13 +77,3 @@ So far I have looked at data about:
 32. ~~Avatar: The Last Airbender~~ /Internal: Hierarchical data
 
 **27 out of 32, what a streak!**
-
-<!--html_preserve-->
-
-<div id="htmlwidget-24f07730f8d1fea8142d" class="gauge html-widget"
-style="width:672px;height:480px;">
-
-</div>
-
-<script type="application/json" data-for="htmlwidget-24f07730f8d1fea8142d">{"x":{"value":26,"min":0,"max":48,"customSectors":[{"lo":80,"hi":100,"color":"success"},{"lo":40,"hi":79,"color":"warning"},{"lo":0,"hi":39,"color":"danger"}],"symbol":null,"label":"Projects","humanFriendly":true,"humanFriendlyDecimal":1,"href":null},"evals":[],"jsHooks":[]}</script>
-<!--/html_preserve-->
