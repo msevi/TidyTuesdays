@@ -1,7 +1,6 @@
 ---
 title: "TidyTuesday"
 output: github_document
-always_allow_html: true
 ---
 
 # Who are we?
