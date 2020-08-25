@@ -1,0 +1,166 @@
+---
+title: "Visualization of Hierarchical data"
+output:
+  html_document:
+    keep_md: true
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Objectives
+
+Use the `metacoder` [package](https://grunwaldlab.github.io/metacoder_documentation/index.html){target="_blank"} to visualize hierarchical data. 
+
+The [study](https://www.nature.com/articles/ncomms12151){target-"_blank}, published on Nature in 2016, looks at the effect of host characteristics on the microbiome of Boechera stricta (Brassicaceae), a perennial wild mustard. 
+
+Specific task set out to do:
+1.	Combine OTU, metadata, and taxonomy data into one table and filter for the samples only in one group of interest, like coming from roots  
+2.	Visualize the taxonomy data from samples belonging to the roots  
+3.	Visualize the taxonomy data from samples belonging to the roots and leaves to highlight the differences  
+
+## Load libraries
+
+```{r load_libraries, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(metacoder)
+```
+
+## Get Data
+
+```{r get_data, warning=FALSE, message=FALSE}
+metadata<- readr::read_tsv("SMD.txt") # number of samples:1699;  data and metadata associated to it: 15 variables
+OTU<- readr::read_tsv("otuTable97.txt") #Large data set: 407806 
+taxonomy<- readr::read_tsv("taxAssignments97.txt") 
+```
+
+## Data Wrangling 
+
+We can use tidyverse verbs to filter and join the data. 
+```{r data_wrangling, message=FALSE}
+# Combine OTU, metadata, and taxonomy data into one table and filter for the samples only in one group of interest, like coming from roots  
+
+## 998 samples associated with root
+metadata_root<- metadata %>%
+  filter(Type=="root")
+
+levels(as.factor(metadata$Type))
+
+
+OTU_root<- OTU %>%
+  select(OTU_ID, metadata_root$SampleID)
+
+#Inconsistent variable ID and observation name for OTU, as well as variable type
+taxonomy_root<- taxonomy %>%
+  rename(OTU_ID="OTU ID") %>%
+  mutate(OTU_ID = str_remove(OTU_ID, "OTU_")) %>%
+  mutate(OTU_ID= as.numeric(OTU_ID))
+
+#Combined DF
+combined<- OTU_root %>%
+  pivot_longer(cols= starts_with("M"), names_to = "SampleID", values_to = "counts") %>%
+  left_join(taxonomy_root) %>%
+  left_join(metadata)
+
+```
+
+However, in order to use the `metacoder` package, our data has to be of specific class: `Taxmap`. I'm following the workflow on their [example page](https://grunwaldlab.github.io/metacoder_documentation/example.html){target="_blank"}. A few thing to note:  
+ * the 'Taxmap' class comes from package `taxa` and it's used to store taxonomy and associated information. 
+ * for this analyses, I removed:  
+    * OTUs that were classified as "Unassigned"  
+    * OTUs that were not classified up to family level  
+ * in order to parse taxonomy correctly, each lineage should begin with "r__Root"
+
+```{r taxmap, warning=FALSE, message=FALSE} 
+
+pm_taxonomy<- taxonomy %>%
+  rename(OTU_ID="OTU ID") %>%
+  drop_na() %>%
+  select(OTU_ID, taxonomy) %>%
+  filter(!taxonomy == "Unassigned") %>%
+  mutate(taxonomy = str_replace(taxonomy, "Root;", "r__Root;"))
+
+pm_otus<- OTU %>%
+  mutate(OTU_ID = as.character(OTU_ID)) %>%
+  mutate(OTU_ID = str_replace(OTU_ID, "^", "OTU_")) %>%
+  left_join(pm_taxonomy) 
+
+pm_samples<- metadata
+
+obj <- taxa::parse_tax_data(pm_otus,
+                      class_cols = "taxonomy", # the column that contains taxonomic information
+                      class_sep = ";", # The character used to separate taxa in the classification
+                      class_regex = "^(.+)__(.+)$", # Regex identifying where the data for each taxon is
+                      class_key = c(tax_rank = "info", # A key describing each regex capture group
+                                    tax_name = "taxon_name"))
+
+str(obj)
+print(obj) #node is taxon with directed edges
+
+#low abundance data to zeros, counts >5
+?zero_low_counts
+obj$data$tax_data <- zero_low_counts(obj, dataset = "tax_data", min_count = 5)
+
+no_reads <- rowSums(obj$data$tax_data[, pm_samples$SampleID]) == 0
+sum(no_reads) #47806 without reads
+
+#drop OTU w/o data
+obj <- filter_obs(obj, target = "tax_data", ! no_reads, drop_taxa = TRUE)
+
+
+#uneven sampling counts to proportions
+obj$data$tax_data <- calc_obs_props(obj, "tax_data")
+
+#per taxon abundance
+obj$data$tax_abund <- calc_taxon_abund(obj, "tax_data",
+                                       cols = pm_samples$SampleID)
+
+
+
+#number of samples that have reads for each taxon:
+obj$data$tax_occ <- calc_n_samples(obj, "tax_abund", groups = pm_samples$Type, cols = pm_samples$SampleID)
+
+
+#compare groups
+obj$data$diff_table <- compare_groups(obj, dataset = "tax_abund",
+                                      cols = pm_samples$SampleID, # What columns of sample data to use
+                                      groups = pm_samples$Type) # What category each sample is assigned to
+print(obj$data$diff_table)
+
+```
+
+
+## Visualizations
+
+
+```{r fig.width= 10, fig.height=8, warning=FALSE, message=FALSE}
+
+#input class Taxmap
+heat_tree(obj, 
+          node_label = taxon_names,
+          node_size = n_obs,
+          node_color = root, 
+          node_size_axis_label = "OTU count",
+          node_color_axis_label = "Samples with reads",
+          layout = "davidson-harel", # The primary layout algorithm
+          initial_layout = "reingold-tilford") # The layout algorithm that initializes node locations
+
+
+heat_tree_matrix(obj,
+                 data = "diff_table",
+                 node_size = n_obs, # n_obs is a function that calculates, in this case, the number of OTUs per taxon
+                 node_label = taxon_names,
+                 node_color = log2_median_ratio, # A column from `obj$data$diff_table`
+                 node_color_range = diverging_palette(), # The built-in palette for diverging data
+                 node_color_trans = "linear", # The default is scaled by circle area
+                 node_color_interval = c(-3, 3), # The range of `log2_median_ratio` to display
+                 edge_color_interval = c(-3, 3), # The range of `log2_median_ratio` to display
+                 node_size_axis_label = "Number of OTUs",
+                 node_color_axis_label = "Log2 ratio median proportions",
+                 layout = "davidson-harel", # The primary layout algorithm
+                 initial_layout = "reingold-tilford", # The layout algorithm that initializes node locations
+                 output_file = "differential_heat_tree.pdf") # Saves the plot as a pdf file
+
+```
