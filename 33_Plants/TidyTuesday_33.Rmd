@@ -3,6 +3,7 @@ title: "Tidy_Tuesday_2020_08_25"
 output: 
   github_document:
     toc: true
+  always_allow_html: true
 ---
 
 ```{r setup, include=FALSE}
