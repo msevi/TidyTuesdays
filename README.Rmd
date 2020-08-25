@@ -1,10 +1,7 @@
 ---
 title: "TidyTuesday"
 output: github_document
-<<<<<<< HEAD
 always_allow_html: true
-=======
->>>>>>> 506400a6fc30409b37a61df2207e960476fd2f9e
 ---
 
 # Who are we?
@@ -68,17 +65,11 @@ So far I have looked at data about:
 
 **27 out of 32, what a streak!**
 
-```{r eval=TRUE, echo=FALSE}
-library(flexdashboard)
-gauge(27, min = 0, max = 48, gaugeSectors(
-=======
-
-26 out of 30, what a streak!
 
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
 gauge(26, min = 0, max = 48, gaugeSectors(
->>>>>>> 506400a6fc30409b37a61df2207e960476fd2f9e
   success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
 ), label = 'Projects')
+
 ```
