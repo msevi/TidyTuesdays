@@ -1,7 +1,10 @@
 ---
 title: "TidyTuesday"
 output: github_document
+<<<<<<< HEAD
 always_allow_html: true
+=======
+>>>>>>> 506400a6fc30409b37a61df2207e960476fd2f9e
 ---
 
 # Who are we?
@@ -59,6 +62,7 @@ So far I have looked at data about:
 28. Astronauts  
 29. ~~Australian animals~~ / Internal: Reproducible research  
 30. Palmer Penguins  
+<<<<<<< HEAD
 31. European Energy  
 32. ~~Avatar: The Last Airbender~~ /Internal: Hierarchical data  
 
@@ -67,6 +71,14 @@ So far I have looked at data about:
 ```{r eval=TRUE, echo=FALSE}
 library(flexdashboard)
 gauge(27, min = 0, max = 48, gaugeSectors(
+=======
+
+26 out of 30, what a streak!
+
+```{r eval=TRUE, echo=FALSE}
+library(flexdashboard)
+gauge(26, min = 0, max = 48, gaugeSectors(
+>>>>>>> 506400a6fc30409b37a61df2207e960476fd2f9e
   success = c(80, 100), warning = c(40, 79), danger = c(0, 39)
 ), label = 'Projects')
 ```

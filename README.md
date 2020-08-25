@@ -71,6 +71,7 @@ So far I have looked at data about:
 27. Coffee  
 28. Astronauts  
 29. ~~Australian animals~~ / Internal: Reproducible research  
+<<<<<<< HEAD
 30. Palmer Penguins  
 31. European Energy  
 32. ~~Avatar: The Last Airbender~~ /Internal: Hierarchical data
@@ -86,3 +87,10 @@ style="width:672px;height:480px;">
 
 <script type="application/json" data-for="htmlwidget-93870b6e7cc38993265b">{"x":{"value":27,"min":0,"max":48,"customSectors":[{"lo":80,"hi":100,"color":"success"},{"lo":40,"hi":79,"color":"warning"},{"lo":0,"hi":39,"color":"danger"}],"symbol":null,"label":"Projects","humanFriendly":true,"humanFriendlyDecimal":1,"href":null},"evals":[],"jsHooks":[]}</script>
 <!--/html_preserve-->
+=======
+30. Palmer Penguins
+
+26 out of 30, what a streak!
+
+![](README_files/figure-gfm/unnamed-chunk-1-1.png)<!-- -->
+>>>>>>> 506400a6fc30409b37a61df2207e960476fd2f9e
